@@ -1,0 +1,36 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const input=require('fs').readFileSync('/dev/stdin','utf8');const d=JSON.parse(input);if(/rm\\s+-rf\\s+[\\/]|git\\s+push\\s+.*--force|DROP\\s+TABLE|format\\s+[a-z]:/i.test(d.tool_input?.command||'')){console.error('BLOCKED: dangerous command');process.exit(1)}\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '文件已修改，请确认是否需要运行 lint/test'"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '验收提醒：请确认输出包含 1)变更摘要 2)验证结果 3)风险点'"
+          }
+        ]
+      }
+    ]
+  }
+}
