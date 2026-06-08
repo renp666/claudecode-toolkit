@@ -161,7 +161,10 @@ Claude Code 的效率瓶颈不在模型能力，而在**上下文管理**：
       performance-analyzer.md
       api-tester.md
       doc-generator.md
-    skills/                # 项目专属技能（13 个，按需启用）
+    hooks/                # Hook 脚本（7 个守卫/通知/审计）
+      README.md           # Hook 完整说明文档
+      pre-commit-check.ps1
+    skills/                # 项目专属技能（16 个，按需启用）
       addyosmani-spec-driven-development/SKILL.md
       addyosmani-planning-and-task-breakdown/SKILL.md
       addyosmani-frontend-ui-engineering/SKILL.md
@@ -363,53 +366,82 @@ Copy-Item "templates\.claude\rules\python.md" "D:\my-api\.claude\rules\python.md
 
 > **注意**：通用 rules（frontend/backend/testing）和栈专用 rules 会按 glob 匹配**同时生效**，无需删除通用规则。栈专用规则更具体，会覆盖通用规则中的重叠部分。
 
-### 2.3 Hooks 基础守卫
-
-编辑 `.claude/settings.json`（项目级）：
+### 2.3 Hooks 守卫/通知/审计体系（7 个）
 
 > 已落地到本地：`d:\开发环境安装\ClaudeCode\03-claude-optimize\.claude\settings.json`
+> 详细说明：`.claude/hooks/README.md`
 
-```json
-{
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node -e \"const input=require('fs').readFileSync('/dev/stdin','utf8');const d=JSON.parse(input);if(/rm\\s+-rf\\s+[\\/]|git\\s+push\\s+.*--force|DROP\\s+TABLE|format\\s+[a-z]:/i.test(d.tool_input?.command||'')){console.error('BLOCKED: dangerous command');process.exit(1)}\""
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo '文件已修改，请确认是否需要运行 lint/test'"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo '验收提醒：请确认输出包含 1)变更摘要 2)验证结果 3)风险点'"
-          }
-        ]
-      }
-    ]
-  }
-}
+Hooks 是 Claude Code 的**确定性守卫机制**——与 CLAUDE.md 的"建议"不同，Hook 的执行和阻断是强制性的。按用途分为三类：
+
+| 类型 | 说明 | 示例 |
+|------|------|------|
+| **守卫（Guard）** | PreToolUse 拦截，exit 1 阻止执行 | 危险命令拦截、pre-commit 检查 |
+| **通知（Notify）** | PostToolUse/Stop 提醒，非阻塞 | 桌面弹窗、验收清单 |
+| **审计（Audit）** | 静默记录到 .claude/logs/ | WebFetch 日志、PreCompact 快照 |
+
+#### 7 个 Hook 总览
+
+| # | 事件 | 匹配器 | 功能 | 阻塞 |
+|---|------|--------|------|------|
+| 1 | `PreToolUse` | Bash | 拦截危险命令（rm -rf /、DROP TABLE 等） | 是 |
+| 2 | `PreToolUse` | Bash → `git commit` | 代码格式检查 + 冗余分析（检测 husky/lint-staged 等已有机制，避免重复） | 是 |
+| 3 | `PostToolUse` | Write\|Edit | 文件修改后终端提示 lint/test | 否 |
+| 4 | `PostToolUse` | WebFetch | 外部请求审计日志 → `.claude/logs/web-fetch.jsonl` | 否 |
+| 5 | `Stop` | — | 验收清单 + Windows 右下角中文弹窗 + "叮"提示音 | 否 |
+| 6 | `SubagentStop` | — | 子智能体完成时 Windows 弹窗 + 提示音 | 否 |
+| 7 | `PreCompact` | — | 上下文压缩前保存快照 → `.claude/logs/precompact-*.json` | 否 |
+
+#### Hook 1-2：PreToolUse 安全与质量守卫
+
+**危险命令拦截**（Hook 1）覆盖 `rm -rf /`、`git push --force`、`DROP TABLE`、`format [drive]:` 四种模式，exit 1 直接阻止执行，无绕过方式。
+
+**Git Commit 代码格式检查**（Hook 2）流程：
+```
+git commit 触发
+  → 冗余分析：检测 husky / lint-staged / .pre-commit-config.yaml / .git/hooks/pre-commit
+    → 有：跳过内置检查（避免重复）
+    → 无：执行内置检查
+      → 大文件检查（>500KB）
+      → 行尾空白 + 调试语句检测（console.log / print() / fmt.Println / debugger / breakpoint()）
+      → ESLint 集成（如项目已安装）
+  → 不通过 → 阻止提交，输出详情（可用 --no-verify 绕过）
+```
+> 脚本位置：`.claude/hooks/pre-commit-check.ps1`
+
+#### Hook 3-4：PostToolUse 提醒与审计
+
+**文件修改提醒**（Hook 3）在 Write/Edit 后终端输出提示，提醒开发者运行 lint/test 验证变更。
+
+**WebFetch 审计日志**（Hook 4）将所有外部网络请求记录到 `.claude/logs/web-fetch.jsonl`（JSONL 格式），用于安全审计和追溯。
+
+#### Hook 5-6：Stop / SubagentStop 桌面通知
+
+**会话结束**（Hook 5）和**子智能体完成**（Hook 6）时：
+- 终端输出验收清单（仅 Stop）
+- Windows 右下角气泡弹窗（中文，Stop 5 秒 / SubagentStop 3 秒）
+- 系统提示音 "叮"（SystemSounds.Asterisk）
+
+> 实现方式：PowerShell 内联命令调用 `System.Windows.Forms.NotifyIcon`，无需额外依赖。
+
+#### Hook 7：PreCompact 上下文快照
+
+上下文压缩前自动保存快照到 `.claude/logs/precompact-YYYY-MM-DD_HH-MM-SS.json`，记录 `context_size`、`compact_at`、`session_id`。用于回溯长会话的压缩节点，排查上下文丢失问题。
+
+#### 目录结构
+
+```
+.claude/
+├── hooks/
+│   ├── README.md                  # Hook 完整说明（含禁用/绕过/迁移指南）
+│   └── pre-commit-check.ps1       # Git 提交检查脚本
+├── logs/                          # 自动生成（已 gitignore）
+│   ├── web-fetch.jsonl            # WebFetch 审计日志
+│   └── precompact-*.json          # 上下文压缩快照
+└── settings.json                  # Hook 配置
 ```
 
-> **来源**：[Hooks Guide](https://code.claude.com/docs/en/hooks-guide)、[Hooks Blog](https://claude.com/blog/how-to-configure-hooks)
-> **说明**：Hooks 是"保证型机制"——提示只是建议，Hook 是保证。上述为基础模板，实际项目中应替换为真实的 lint/test 命令。
+> **迁移方式**：Hook 脚本（`.claude/hooks/`）+ 配置（`.claude/settings.json`）均在 `.claude/` 目录内，复制整个目录即可完成迁移。
+> **来源**：[Hooks Guide](https://code.claude.com/docs/en/hooks-guide)、[Hooks Reference](https://code.claude.com/docs/en/hooks)、[Hooks Blog](https://claude.com/blog/how-to-configure-hooks)
 
 ### 2.4 权限白名单
 
@@ -1054,15 +1086,17 @@ New-Item -ItemType Directory -Force ".claude\agents" | Out-Null
 |---|------|-----|------|------|
 | 1 | addyosmani/agent-skills | 22.8K | ✅ 安装 6 个 | 20-skill 体系覆盖全生命周期，选 6 个填补 Define/Plan/Build/Review/Ship 缺口 |
 | 2 | mattpocock/skills | 44K+ | ✅ 安装 4 个 | grill-with-docs（需求对齐）、tdd（红绿重构）、diagnose（纪律化调试）、caveman（压缩） |
-| 3 | anthropics/frontend-design | 4.8K | ⏭️ 跳过 | 与 ui-designer agent 功能重叠 |
+| 3 | anthropics/frontend-design | 4.8K | ✅ 安装 | 创意视觉设计（字体/配色/动效/空间构图），专注反 AI 俗套美学，与 `ui-designer`（审查）和 `addyosmani-frontend-ui-engineering`（工程规范）互补 |
 | 4 | vercel/next.js cache-components | — | ✅ 安装 | Next.js 官方，`'use cache'`/PPR 专项，无替代 |
 | 5 | Shubhamsaboo/awesome-llm-apps | 109K | ⏭️ 跳过 | fullstack-developer 过于通用，与 CLAUDE.md 全面重叠 |
 | 6 | langgenius/dify frontend-code-review | 141K | ✅ 安装 | 前端专项 review checklist，与 code-reviewer agent 互补 |
 | 7 | google-gemini/gemini-cli code-reviewer | 59K | ⏭️ 跳过 | 与 code-reviewer agent + addyosmani 重叠 |
 | 8 | anthropics/webapp-testing | 4.8K | ✅ 安装 | Playwright E2E 测试，填补测试自动化缺口 |
 | 9 | facebook/react fix | 237K | ⏭️ 跳过 | React 内部专用（修复 jscodeshift codemod），不可移植 |
+| 10 | vercel-labs/skills find-skills | — | ✅ 安装 | 技能发现与安装助手——搜索 skills.sh 生态、验证质量、按需安装，填补"不知道有什么 skill 可用"的缺口 |
+| 11 | anthropics/skills skill-creator | — | ✅ 安装 | 技能创建/改进/评测——草拟 SKILL.md → 测试用例 → 基准对比 → 迭代优化 → Description 触发率调优 → 打包发布 |
 
-#### 已安装 Skills（13 个）
+#### 已安装 Skills（16 个）
 
 | Skill 目录 | 来源 | 触发场景 | 核心能力 |
 |------------|------|---------|---------|
@@ -1073,25 +1107,27 @@ New-Item -ItemType Directory -Force ".claude\agents" | Out-Null
 | `addyosmani-spec-driven-development` | addyosmani | 编码前 → 先写规格 | 4 阶段门控（Specify→Plan→Tasks→Implement），6 维规格面 |
 | `addyosmani-planning-and-task-breakdown` | addyosmani | 需求复杂、需拆分子任务 | 垂直切片策略、依赖图、XS/S/M/L/XL 任务分级、检查点系统 |
 | `addyosmani-frontend-ui-engineering` | addyosmani | 构建/修改用户界面 | 生产级 UI 构建、设计系统遵循、无障碍、交互模式、组件架构 |
+| `anthropics-frontend-design` | anthropics/skills | 需要高设计质量的 UI 创建 | 创意视觉设计、大胆美学方向、独特字体/配色/动效/空间构图、反 AI 俗套（"AI slop"） |
 | `addyosmani-api-and-interface-design` | addyosmani | 设计 API/模块边界 | Hyrum's Law、接口稳定性、版本化策略、前后端契约设计 |
 | `addyosmani-code-simplification` | addyosmani | 代码审查/重构阶段 | Chesterton's Fence 原则、Rule of 500、5 大简化原则、TS/Python/React 专项指南 |
 | `addyosmani-shipping-and-launch` | addyosmani | 功能完成 → 准备发布 | 发布前清单（质量/安全/性能/可达性/基础设施）、特性标志生命周期、灰度发布阈值 |
+| `vercel-find-skills` | vercel-labs/skills | 发现/搜索/安装新 skill | 搜索 skills.sh 生态、skills.sh leaderboard 查流行度、质量验证（安装量/源/Star）、分类检索 |
+| `anthropics-skill-creator` | anthropics/skills | 创建/改进/评测 skill | 意图捕获 → 草拟 SKILL.md → 测试用例 → 并行基准对比 → 迭代优化 → Description 触发率调优 → 打包 .skill 文件 |
 | `cache-components` | vercel/next.js | Next.js 缓存相关开发 | `'use cache'` 指令、`cacheLife()`/`cacheTag()`/`updateTag()`/`revalidateTag()`、PPR 决策树 |
 | `frontend-code-review` | langgenius/dify | 前端代码审查 | 双模式 review（待提交变更 / 指定文件）、结构化输出模板、规则目录 |
 | `webapp-testing` | anthropics/skills | Web 应用端到端测试 | Playwright 测试决策树、with_server.py 服务生命周期管理、侦查-行动模式 |
 
-#### 冗余分析（未安装的 4 个）
+#### 冗余分析（未安装的 3 个）
 
 | Skill | 替代方案 | 冗余说明 |
 |-------|---------|---------|
-| frontend-design (Anthropic) | `ui-designer` agent（§3.3） | agent 已包含设计规范、Figma 集成、设计系统知识 |
 | fullstack-developer (awesome-llm-apps) | `.claude_global/CLAUDE.md` + 所有 agents | 全栈最佳实践已被 Karpathy 原则 + 7 个 agent 完整覆盖 |
 | code-reviewer (gemini-cli) | `code-reviewer` agent + addyosmani skills | agent 已包含安全/性能/质量三维审查，addyosmani 提供简化/发布维度 |
 | fix (react) | `git-commit` skill + `/fix-issue` command | React 内部 codemod 工具，不适用于外部项目 |
 
 #### 部署方式
 
-- **自动部署**：`setup-claude.ps1` 会将 13 个 skill 目录复制到目标项目 `.claude/skills/`
+- **自动部署**：`setup-claude.ps1` 会将 16 个 skill 目录复制到目标项目 `.claude/skills/`
 - **手动按需**：从 `03-claude-optimize/.claude/skills/` 复制单个目录到项目 `.claude/skills/`
 - **引用原则**：先装常用 skill，确认使用频率后再考虑全量安装
 
@@ -1312,14 +1348,26 @@ d:\开发环境安装\ClaudeCode\03-claude-optimize\
 │       │   └── test-plan.md
 │       ├── agents\                      # 角色型智能体（7 个）
 │       │   └── *.md
-│       └── skills\                      # 技能（13 个）
+│       ├── hooks\                       # Hook 脚本（7 个）
+│       │   ├── README.md                # Hook 说明文档
+│       │   └── pre-commit-check.ps1     # Git 提交检查
+│       └── skills\                      # 技能（16 个）
+│           ├── anthropics-frontend-design\            # 创意视觉设计
+│           ├── anthropics-skill-creator\              # 技能创建/改进/评测
+│           ├── vercel-find-skills\                    # 技能发现与安装
 │           └── */SKILL.md
 ├── .claude\                             # 当前项目的工作配置
 │   ├── settings.json                    # Hooks 守卫配置
 │   ├── rules\                           # 路径化规则（3 个通用）
 │   ├── commands\                        # 项目级命令（2 个）
 │   ├── agents\                          # 角色型智能体（7 个）
-│   └── skills\                          # 技能（13 个）
+│   ├── hooks\                           # Hook 脚本（7 个）
+│   │   ├── README.md                    # Hook 说明文档
+│   │   └── pre-commit-check.ps1         # Git 提交检查
+│   └── skills\                          # 技能（16 个）
+│       ├── anthropics-frontend-design\             # 创意视觉设计
+│       ├── anthropics-skill-creator\               # 技能创建/改进/评测
+│       ├── vercel-find-skills\                     # 技能发现与安装
 │       ├── addyosmani-spec-driven-development\    # /spec - 规格驱动
 │       ├── addyosmani-planning-and-task-breakdown\ # /plan - 任务拆分
 │       ├── addyosmani-frontend-ui-engineering\     # UI 构建

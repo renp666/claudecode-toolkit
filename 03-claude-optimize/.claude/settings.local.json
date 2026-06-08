@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh api *)",
+      "Bash(curl -sL \"https://raw.githubusercontent.com/anthropics/skills/main/skills/frontend-design/SKILL.md\")",
+      "Bash(curl -sL \"https://raw.githubusercontent.com/vercel-labs/skills/main/skills/find-skills/SKILL.md\")"
+    ]
+  }
+}

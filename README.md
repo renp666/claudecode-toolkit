@@ -5,6 +5,21 @@
 [![Claude Code](https://img.shields.io/badge/Claude-Code-6366f1?style=flat-square&logo=anthropic)](https://docs.anthropic.com/en/docs/claude-code)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue?style=flat-square)]()
+[![GitHub Pages](https://img.shields.io/badge/Preview-GitHub%20Pages-28a745?style=flat-square&logo=github)](https://renp666.github.io/claudecode-pages/demo.html)
+
+---
+
+## 在线预览
+
+**[Claude Code 调优方案 — 交互式文档](https://renp666.github.io/claudecode-pages/demo.html)**
+
+包含页面：
+- [首页](https://renp666.github.io/claudecode-pages/demo.html) — 四层架构概览、核心能力、实施路径
+- [方案概览](https://renp666.github.io/claudecode-pages/overview.html) — 核心问题、四层架构详解、环境规划
+- [核心能力](https://renp666.github.io/claudecode-pages/capabilities.html) — CLAUDE.md、Rules、Hooks、Commands、Agents、Skills
+- [实施路径](https://renp666.github.io/claudecode-pages/roadmap.html) — 三阶段时间线、Skills 评估、CC-Switch
+- [效果数据](https://renp666.github.io/claudecode-pages/metrics.html) — Token 管理、命令速查、会话策略
+- [快速上手](https://renp666.github.io/claudecode-pages/quickstart.html) — 前置条件、一键部署、手动部署、验证清单
 
 ---
 

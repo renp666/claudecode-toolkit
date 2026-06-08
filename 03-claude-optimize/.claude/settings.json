@@ -1,4 +1,8 @@
 {
+  "statusLine": {
+    "type": "command",
+    "command": "input=$(cat); d=$(echo \"$input\" | jq -r '.workspace.current_dir // empty'); m=$(echo \"$input\" | jq -r '.model.display_name // empty'); p=$(echo \"$input\" | jq -r '.context_window.remaining_percentage // empty'); out=\"$d\"; [ -n \"$m\" ] && out=\"$out | $m\"; [ -n \"$p\" ] && out=\"$out | Context: ${p}% remaining\"; echo \"$out\""
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -7,6 +11,10 @@
           {
             "type": "command",
             "command": "node -e \"const input=require('fs').readFileSync('/dev/stdin','utf8');const d=JSON.parse(input);if(/rm\\s+-rf\\s+[\\/]|git\\s+push\\s+.*--force|DROP\\s+TABLE|format\\s+[a-z]:/i.test(d.tool_input?.command||'')){console.error('BLOCKED: dangerous command');process.exit(1)}\""
+          },
+          {
+            "type": "command",
+            "command": "input=$(cat); if echo \"$input\" | grep -qE 'git\\s+commit\\b'; then echo \"$input\" | powershell.exe -NoProfile -ExecutionPolicy Bypass -File \".claude/hooks/pre-commit-check.ps1\"; fi"
           }
         ]
       }
@@ -20,6 +28,15 @@
             "command": "echo '文件已修改，请确认是否需要运行 lint/test'"
           }
         ]
+      },
+      {
+        "matcher": "WebFetch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));const e={url:d.tool_input?.url,time:d.timestamp,session:d.session_id};require('fs').mkdirSync('.claude/logs',{recursive:true});require('fs').appendFileSync('.claude/logs/web-fetch.jsonl',JSON.stringify(e)+'\\n')\""
+          }
+        ]
       }
     ],
     "Stop": [
@@ -28,6 +45,30 @@
           {
             "type": "command",
             "command": "echo '验收提醒：请确认输出包含 1)变更摘要 2)验证结果 3)风险点'"
+          },
+          {
+            "type": "command",
+            "command": "powershell.exe -NoProfile -Command \"[System.Media.SystemSounds]::Asterisk.Play(); Add-Type -AssemblyName System.Windows.Forms,System.Drawing; $n=New-Object System.Windows.Forms.NotifyIcon; $n.Icon=[System.Drawing.SystemIcons]::Information; $n.BalloonTipTitle='Claude Code'; $n.BalloonTipText='任务完成，请确认结果'; $n.BalloonTipIcon='Info'; $n.Visible=$true; $n.ShowBalloonTip(5000); Start-Sleep -Seconds 1; $n.Dispose()\""
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -NoProfile -Command \"[System.Media.SystemSounds]::Asterisk.Play(); Add-Type -AssemblyName System.Windows.Forms,System.Drawing; $n=New-Object System.Windows.Forms.NotifyIcon; $n.Icon=[System.Drawing.SystemIcons]::Information; $n.BalloonTipTitle='Claude Code'; $n.BalloonTipText='子智能体任务完成，请确认结果'; $n.BalloonTipIcon='Info'; $n.Visible=$true; $n.ShowBalloonTip(3000); Start-Sleep -Seconds 1; $n.Dispose()\""
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));const dir='.claude/logs';require('fs').mkdirSync(dir,{recursive:true});const ts=new Date().toISOString().replace(/[:.]/g,'-').replace('T','_').slice(0,19);const s={context_size:d.context_size,compact_at:ts,session:d.session_id};require('fs').writeFileSync(dir+'/precompact-'+ts+'.json',JSON.stringify(s,null,2))\""
           }
         ]
       }

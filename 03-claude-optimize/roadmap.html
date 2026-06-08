@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>实施路径 - Claude Code 优化方案</title>
+<style>
+  :root { --bg: #0f1117; --card: #1a1d27; --border: #2a2d3a; --accent: #6c5ce7; --accent2: #00d2ff; --text: #e1e4ed; --muted: #8b8fa3; --green: #00c853; --orange: #ff9100; --red: #ff5252; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  a { color: var(--accent2); text-decoration: none; } a:hover { text-decoration: underline; }
+  .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(15,17,23,0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 0 2rem; }
+  .nav-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 60px; }
+  .nav-logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.25rem; color: var(--text); text-decoration: none; }
+  .nav-logo:hover { text-decoration: none; }
+  .nav-logo .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+  .nav-links { display: flex; gap: 2rem; list-style: none; }
+  .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
+  .nav-links a:hover { color: var(--text); text-decoration: none; }
+  .nav-links a.active { color: var(--text); border-bottom: 2px solid var(--accent); }
+  .btn { padding: 8px 20px; border-radius: 8px; border: none; font-size: 0.9rem; cursor: pointer; font-weight: 600; transition: all 0.2s; text-decoration: none; display: inline-block; }
+  .btn:hover { text-decoration: none; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #7c6ff7; transform: translateY(-1px); }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-outline:hover { border-color: var(--accent); }
+  .page-header { padding: 100px 2rem 50px; text-align: center; }
+  .page-header h1 { font-size: 2.5rem; font-weight: 800; letter-spacing: -0.02em; }
+  .page-header p { color: var(--muted); font-size: 1.1rem; margin-top: 0.75rem; max-width: 600px; margin-left: auto; margin-right: auto; }
+  .section { max-width: 1100px; margin: 0 auto; padding: 40px 2rem; }
+  .section h2 { font-size: 1.6rem; font-weight: 700; margin-bottom: 1.5rem; letter-spacing: -0.02em; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem; }
+  .section h3 { font-size: 1.15rem; font-weight: 600; margin: 1.5rem 0 0.75rem; color: var(--accent2); }
+  .section p { color: var(--muted); margin-bottom: 1rem; }
+  .section ul, .section ol { color: var(--muted); margin-left: 1.5rem; margin-bottom: 1rem; }
+  .section li { margin-bottom: 0.4rem; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; margin-bottom: 1.5rem; }
+  .card h3 { color: var(--text); margin-top: 0; }
+  .table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 1.5rem; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 0.9rem 1.25rem; text-align: left; }
+  th { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border); }
+  td { border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+  tr:last-child td { border-bottom: none; }
+  .badge { padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+  .badge-success { background: rgba(0,200,83,0.15); color: var(--green); }
+  .badge-warn { background: rgba(255,145,0,0.15); color: var(--orange); }
+  .badge-progress { background: rgba(108,92,231,0.15); color: var(--accent); }
+  code { background: rgba(108,92,231,0.15); color: var(--accent); padding: 2px 6px; border-radius: 4px; font-size: 0.85em; }
+  pre { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; overflow-x: auto; margin-bottom: 1.5rem; font-size: 0.85rem; line-height: 1.7; color: var(--muted); }
+  .timeline { position: relative; padding-left: 2.5rem; }
+  .timeline::before { content: ''; position: absolute; left: 10px; top: 0; bottom: 0; width: 2px; background: var(--border); }
+  .tl-item { position: relative; margin-bottom: 2.5rem; }
+  .tl-item::before { content: ''; position: absolute: left: -2rem; top: 6px; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); border: 3px solid var(--bg); }
+  .tl-item.done::before { background: var(--green); }
+  .tl-item.active::before { background: var(--orange); box-shadow: 0 0 12px var(--orange); }
+  .tl-item.plan::before { background: var(--card); border: 2px solid var(--muted); }
+  .tl-time { font-size: 0.82rem; font-weight: 600; }
+  .tl-time.done { color: var(--green); }
+  .tl-time.active { color: var(--orange); }
+  .tl-time.plan { color: var(--muted); }
+  .tl-title { font-weight: 700; font-size: 1.1rem; margin: 4px 0 8px; }
+  .breadcrumb { color: var(--muted); font-size: 0.85rem; margin-bottom: 1rem; }
+  .breadcrumb a { color: var(--muted); } .breadcrumb a:hover { color: var(--accent2); }
+  footer { border-top: 1px solid var(--border); padding: 2rem; text-align: center; color: var(--muted); font-size: 0.85rem; margin-top: 4rem; }
+  .checklist { list-style: none; margin-left: 0; }
+  .checklist li { padding: 0.5rem 0; padding-left: 1.75rem; position: relative; }
+  .checklist li::before { content: ''; position: absolute; left: 0; top: 0.65rem; width: 12px; height: 12px; border-radius: 3px; border: 2px solid var(--border); }
+  .checklist li.done::before { background: var(--green); border-color: var(--green); }
+  @media (max-width: 768px) { .nav-links { display: none; } }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-logo" href="demo.html"><span class="dot"></span>Claude Optimize</a>
+    <ul class="nav-links">
+      <li><a href="overview.html">方案概览</a></li>
+      <li><a href="capabilities.html">核心能力</a></li>
+      <li><a href="roadmap.html" class="active">实施路径</a></li>
+      <li><a href="metrics.html">效果数据</a></li>
+    </ul>
+    <a class="btn btn-primary" href="quickstart.html">快速上手</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="breadcrumb"><a href="demo.html">首页</a> / 实施路径</div>
+  <h1>实施路径</h1>
+  <p>分阶段推进，逐步验证效果。从核心配置到高级扩展的完整路线图。</p>
+</div>
+
+<!-- 时间线 -->
+<section class="section">
+  <h2>实施时间线</h2>
+  <div class="timeline">
+    <div class="tl-item done">
+      <div class="tl-time done">第一阶段 · 已完成</div>
+      <div class="tl-title">核心配置（建立稳定基础）</div>
+      <div class="card">
+        <p>让 Claude Code 在每个项目中都能"正确做事"——知道项目规范、自动验证、减少重复确认。</p>
+        <ul class="checklist">
+          <li class="done">全局 CLAUDE.md（Karpathy 四原则 + 行为准则，38 行）</li>
+          <li class="done">项目级 CLAUDE.md 模板（项目信息/目录/命令/规范）</li>
+          <li class="done">Rules 模块化（3 通用 + 6 技术栈专用）</li>
+          <li class="done">Hooks 守卫（PreToolUse 拦截危险命令 / PostToolUse lint 提醒 / Stop 验收）</li>
+          <li class="done">权限白名单（npm/git 常用命令免确认）</li>
+          <li class="done">自定义命令（/review / /fix-issue / /deploy / /test-plan）</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="tl-item done">
+      <div class="tl-time done">第二阶段 · 已完成</div>
+      <div class="tl-title">提效增强（减少 Token 浪费）</div>
+      <div class="card">
+        <p>在核心配置稳定运行后，引入工具减少 Token 消耗、提升响应速度。</p>
+        <ul class="checklist">
+          <li class="done">ccusage 用量基线（daily/monthly/breakdown）</li>
+          <li class="done">rtk CLI 输出过滤（减少 50-90% Token）</li>
+          <li class="done">caveman 响应压缩（Lite/Full/Ultra 三档，减少 65-87%）</li>
+          <li class="done">Claude Monitor 实时限额预警</li>
+          <li class="done">MCP 服务器配置（filesystem + github）</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="tl-item active">
+      <div class="tl-time active">第三阶段 · 进行中</div>
+      <div class="tl-title">高级扩展（工程化）</div>
+      <div class="card">
+        <p>根据项目需要，逐步引入工程化工具和角色型智能体。</p>
+        <ul class="checklist">
+          <li class="done">mattpocock/skills（grill-with-docs / tdd / diagnose / caveman）</li>
+          <li class="done">addyosmani/agent-skills（spec / plan / UI / API / simplify / ship）</li>
+          <li class="done">7 个角色型智能体（上下文隔离 + 权限控制 + 模型选择）</li>
+          <li class="done">13 个 Skills 覆盖全生命周期</li>
+          <li>Memory 记忆系统调优（类型定义/写入时机/索引管理）<span class="badge badge-warn" style="margin-left:8px;">65%</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="tl-item plan">
+      <div class="tl-time plan">第四阶段 · 规划中</div>
+      <div class="tl-title">团队推广与迭代</div>
+      <div class="card">
+        <p>文档化、模板化、培训支持，建立效果度量体系。</p>
+        <ul class="checklist">
+          <li>团队模板标准化与文档化<span class="badge badge-progress" style="margin-left:8px;">20%</span></li>
+          <li>效果度量体系（输出质量/响应效率/任务完成率）</li>
+          <li>培训材料与上手指南</li>
+          <li>持续迭代机制</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Skills 评估矩阵 -->
+<section class="section">
+  <h2>第三方 Skills 评估</h2>
+  <p>评估 9 个开源 Skills 仓库，决策标准：<strong style="color:var(--text)">是否与现有 agents/commands/rules 冗余</strong>、<strong style="color:var(--text)">是否填补开发流程缺口</strong>。</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>来源</th><th>Stars</th><th>决策</th><th>原因</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>addyosmani/agent-skills</td><td>22.8K</td><td><span class="badge badge-success">安装 6 个</span></td><td>20-skill 体系覆盖全生命周期，选 6 个填补缺口</td></tr>
+        <tr><td>2</td><td>mattpocock/skills</td><td>44K+</td><td><span class="badge badge-success">安装 4 个</span></td><td>grill-with-docs / tdd / diagnose / caveman</td></tr>
+        <tr><td>3</td><td>anthropics/frontend-design</td><td>4.8K</td><td><span class="badge badge-progress">跳过</span></td><td>与 ui-designer agent 功能重叠</td></tr>
+        <tr><td>4</td><td>vercel/next.js cache-components</td><td>—</td><td><span class="badge badge-success">安装</span></td><td>Next.js 官方，'use cache'/PPR 专项，无替代</td></tr>
+        <tr><td>5</td><td>Shubhamsaboo/awesome-llm-apps</td><td>109K</td><td><span class="badge badge-progress">跳过</span></td><td>fullstack-developer 过于通用，与 CLAUDE.md 重叠</td></tr>
+        <tr><td>6</td><td>langgenius/dify frontend-code-review</td><td>141K</td><td><span class="badge badge-success">安装</span></td><td>前端专项 review checklist，与 code-reviewer 互补</td></tr>
+        <tr><td>7</td><td>google-gemini/gemini-cli</td><td>59K</td><td><span class="badge badge-progress">跳过</span></td><td>与 code-reviewer agent + addyosmani 重叠</td></tr>
+        <tr><td>8</td><td>anthropics/webapp-testing</td><td>4.8K</td><td><span class="badge badge-success">安装</span></td><td>Playwright E2E 测试，填补测试自动化缺口</td></tr>
+        <tr><td>9</td><td>facebook/react fix</td><td>237K</td><td><span class="badge badge-progress">跳过</span></td><td>React 内部专用 codemod，不可移植</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- CC-Switch -->
+<section class="section">
+  <h2>CC-Switch 模型切换规范</h2>
+
+  <div class="card">
+    <h3>稳定切换规则</h3>
+    <p>每个 Provider 内以下字段保持同厂商一致：</p>
+    <ul>
+      <li><code>ANTHROPIC_MODEL</code></li>
+      <li><code>ANTHROPIC_SMALL_FAST_MODEL</code></li>
+      <li><code>ANTHROPIC_DEFAULT_HAIKU_MODEL</code> / <code>SONNET_MODEL</code> / <code>OPUS_MODEL</code></li>
+      <li><code>CLAUDE_CODE_SUBAGENT_MODEL</code></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>切换后固定执行</h3>
+    <pre># 1. 新开终端
+# 2. 验证状态
+claude  # 进入后输入 /status</pre>
+  </div>
+
+  <div class="card">
+    <h3>常见错误</h3>
+    <ul>
+      <li>当前 Provider 是 A，但模型填了 B 厂商模型名</li>
+      <li>只改了 <code>ANTHROPIC_MODEL</code>，未同步默认模型字段</li>
+      <li>切换后未重开会话，仍使用旧配置缓存</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 不纳入基线 -->
+<section class="section">
+  <h2>不纳入基线清单</h2>
+  <p>以下工具经评估后决定不纳入，避免复杂化：</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>工具</th><th>原因</th></tr></thead>
+      <tbody>
+        <tr><td>claude-code-router（多模型路由）</td><td>代理层破坏 skills 兼容性，排障成本高</td></tr>
+        <tr><td>Ollama 本地模型作为默认方案</td><td>推理质量显著低于 Claude，API 兼容性不完整</td></tr>
+        <tr><td>SuperClaude_Framework</td><td>增加抽象层，与极简原则冲突</td></tr>
+        <tr><td>OpenClaude</td><td>第三方分支，法律和兼容性风险</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<footer>
+  <p><a href="demo.html">← 返回首页</a> · Claude Code 调优方案 · 2026</p>
+</footer>
+
+</body>
+</html>
