@@ -29,7 +29,7 @@ function Invoke-Phase1 {
     Write-OK "全局目录已创建: $GlobalClaude"
 
     # 2. 全局 CLAUDE.md
-    $src = Join-Path $TemplateRoot ".claude_global\CLAUDE.md"
+    $src = Join-Path $TemplateRoot "01global-全局级可复制配置\CLAUDE.md"
     $dst = "$GlobalClaude\CLAUDE.md"
     if (Test-Path $dst) {
         Write-Skip "CLAUDE.md 已存在，跳过（如需覆盖请手动删除后重试）"
@@ -39,7 +39,7 @@ function Invoke-Phase1 {
     }
 
     # 3. 全局命令
-    $cmdSrc = Join-Path $TemplateRoot ".claude_global\commands"
+    $cmdSrc = Join-Path $TemplateRoot "01global-全局级可复制配置\commands"
     Copy-Item "$cmdSrc\*.md" "$GlobalClaude\commands\" -Force
     Write-OK "全局命令已部署 (review.md, fix-issue.md)"
 
@@ -53,7 +53,7 @@ function Invoke-Phase1 {
         # 项目 CLAUDE.md（从模板复制，用户自行修改）
         $projClaude = Join-Path $ProjectDir "CLAUDE.md"
         if (-not (Test-Path $projClaude)) {
-            Copy-Item (Join-Path $TemplateRoot "templates\CLAUDE.md") $projClaude
+            Copy-Item (Join-Path $TemplateRoot "02templates-项目级可复制文件目录\CLAUDE.md") $projClaude
             Write-OK "项目 CLAUDE.md 已部署（请根据项目实际情况修改）"
         } else {
             Write-Skip "项目 CLAUDE.md 已存在"
@@ -84,7 +84,7 @@ function Invoke-Phase1 {
         # MCP 配置
         $mcpDst = Join-Path $ProjectDir ".mcp.json"
         if (-not (Test-Path $mcpDst)) {
-            Copy-Item (Join-Path $TemplateRoot "templates\.mcp.json") $mcpDst
+            Copy-Item (Join-Path $TemplateRoot "02templates-项目级可复制文件目录\.mcp.json") $mcpDst
             Write-OK "MCP 配置已部署（请设置 GITHUB_TOKEN 环境变量）"
         } else {
             Write-Skip ".mcp.json 已存在"

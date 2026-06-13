@@ -82,10 +82,11 @@
 - 成功指标：新环境 30 分钟内完成全套配置部署，配置文件 100% 可拷贝复用
 
 ### 目录结构
-- `.claude_global/`：全局配置模板（部署到 `~/.claude/`）
-- `templates/`：项目级模板（复制到新项目根目录）
-- `.claude/`：当前项目的工作配置（与 templates/ 同步）
+- `01global-全局级可复制配置/`：全局配置模板（部署到 `~/.claude/`）
+- `02templates-项目级可复制文件目录/`：项目级模板（复制到新项目根目录）
+- `.claude/`：当前项目的工作配置（与 02templates 同步）
 - `scripts/`：部署脚本（setup-claude.ps1、reinstall-claude-to-cc-switch.ps1）
+- `demo-pages/`：HTML 演示页面
 
 ### 常用命令
 - 部署全部：`.\scripts\setup-claude.ps1 -Phase all -ProjectDir "D:\target"`
@@ -93,10 +94,10 @@
 - 部署阶段二：`.\scripts\setup-claude.ps1 -Phase 2 -ProjectDir "D:\target"`
 
 ### 同步规则
-- `.claude/` 是工作目录，`templates/` 是模板目录，两者必须保持同步
-- 修改 .claude/ 中的文件后，需同步到 templates/ 对应位置
-- 修改 templates/ 中的文件后，需同步到 .claude/ 对应位置
-- `.claude_global/` 独立维护，仅包含全局级配置
+- `.claude/` 是工作目录，`02templates-项目级可复制文件目录/` 是模板目录，两者必须保持同步
+- 修改 .claude/ 中的文件后，需同步到 02templates 对应位置
+- 修改 02templates 中的文件后，需同步到 .claude/ 对应位置
+- `01global-全局级可复制配置/` 独立维护，仅包含全局级配置
 
 ### 编码规范
 - 文档语言：简体中文
