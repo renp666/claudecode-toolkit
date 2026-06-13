@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code Toolkit — AI 编程工具链一站式方案</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --border: #2a2d3a;
+    --accent: #6c5ce7;
+    --accent2: #00d2ff;
+    --accent-codex: #10a37f;
+    --text: #e1e4ed;
+    --muted: #8b8fa3;
+    --green: #00c853;
+    --orange: #ff9100;
+    --red: #ff5252;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  a { color: var(--accent2); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* Navigation */
+  .nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(15,17,23,0.85); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+  }
+  .nav-inner {
+    max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 60px;
+  }
+  .nav-logo {
+    display: flex; align-items: center; gap: 10px;
+    font-weight: 700; font-size: 1.25rem; color: var(--text);
+    text-decoration: none;
+  }
+  .nav-logo:hover { text-decoration: none; }
+  .nav-logo .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--accent); box-shadow: 0 0 12px var(--accent);
+  }
+  .nav-links { display: flex; gap: 2rem; list-style: none; }
+  .nav-links a {
+    color: var(--muted); text-decoration: none; font-size: 0.9rem;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--text); text-decoration: none; }
+  .nav-links a.active {
+    color: var(--text); border-bottom: 2px solid var(--accent);
+  }
+
+  .btn {
+    padding: 10px 24px; border-radius: 8px; border: none;
+    font-size: 0.95rem; cursor: pointer; font-weight: 600;
+    transition: all 0.2s; text-decoration: none; display: inline-block;
+  }
+  .btn:hover { text-decoration: none; transform: translateY(-1px); }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #7c6ff7; }
+  .btn-codex { background: var(--accent-codex); color: white; }
+  .btn-codex:hover { background: #0d8c6d; }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-outline:hover { border-color: var(--accent); }
+
+  /* Hero */
+  .hero {
+    padding: 160px 2rem 100px; text-align: center;
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: ''; position: absolute; top: -30%; left: -30%;
+    width: 160%; height: 160%;
+    background:
+      radial-gradient(circle at 30% 40%, rgba(108,92,231,0.12) 0%, transparent 50%),
+      radial-gradient(circle at 70% 60%, rgba(16,163,127,0.10) 0%, transparent 50%);
+    animation: heroBg 12s ease-in-out infinite;
+  }
+  @keyframes heroBg {
+    0%, 100% { transform: translate(0, 0); }
+    33% { transform: translate(20px, -10px); }
+    66% { transform: translate(-15px, 10px); }
+  }
+  .hero-badge {
+    display: inline-block; background: rgba(108,92,231,0.12);
+    color: var(--accent); padding: 4px 16px; border-radius: 20px;
+    font-size: 0.85rem; font-weight: 600; margin-bottom: 1.5rem;
+    position: relative;
+  }
+  .hero h1 {
+    font-size: clamp(2.5rem, 6vw, 3.8rem); font-weight: 800;
+    letter-spacing: -0.03em; position: relative; line-height: 1.15;
+  }
+  .hero h1 .gradient-text {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero p {
+    color: var(--muted); font-size: 1.15rem; max-width: 650px;
+    margin: 1.5rem auto 0; position: relative; line-height: 1.7;
+  }
+  .hero-actions {
+    display: flex; gap: 1rem; justify-content: center;
+    margin-top: 2.5rem; position: relative; flex-wrap: wrap;
+  }
+
+  /* Stats */
+  .stats-bar {
+    max-width: 900px; margin: -20px auto 80px; padding: 0 2rem;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
+    position: relative; z-index: 2;
+  }
+  .stat-item {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.25rem; text-align: center;
+    transition: border-color 0.3s;
+  }
+  .stat-item:hover { border-color: var(--accent); }
+  .stat-num { font-size: 1.8rem; font-weight: 800; margin-bottom: 4px; }
+  .stat-num.purple { color: var(--accent); }
+  .stat-num.cyan { color: var(--accent2); }
+  .stat-num.green { color: var(--green); }
+  .stat-num.teal { color: var(--accent-codex); }
+  .stat-desc { color: var(--muted); font-size: 0.85rem; }
+
+  /* Section */
+  .section { max-width: 1100px; margin: 0 auto; padding: 0 2rem 80px; }
+  .section-label {
+    text-align: center; margin-bottom: 2.5rem;
+  }
+  .section-label h2 {
+    font-size: 1.8rem; font-weight: 700; letter-spacing: -0.02em;
+  }
+  .section-label p { color: var(--muted); margin-top: 0.5rem; }
+
+  /* Product Cards */
+  .products {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem;
+  }
+  .product-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 2.5rem;
+    transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+    position: relative; overflow: hidden;
+  }
+  .product-card:hover {
+    transform: translateY(-4px);
+  }
+  .product-card.claude:hover {
+    border-color: var(--accent);
+    box-shadow: 0 8px 40px rgba(108,92,231,0.15);
+  }
+  .product-card.codex:hover {
+    border-color: var(--accent-codex);
+    box-shadow: 0 8px 40px rgba(16,163,127,0.15);
+  }
+  .product-icon {
+    width: 48px; height: 48px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; margin-bottom: 1.25rem;
+  }
+  .product-card.claude .product-icon {
+    background: rgba(108,92,231,0.15); color: var(--accent);
+  }
+  .product-card.codex .product-icon {
+    background: rgba(16,163,127,0.15); color: var(--accent-codex);
+  }
+  .product-card h3 {
+    font-size: 1.35rem; font-weight: 700; margin-bottom: 0.75rem;
+    letter-spacing: -0.02em;
+  }
+  .product-card p {
+    color: var(--muted); font-size: 0.95rem; margin-bottom: 1.25rem;
+    line-height: 1.7;
+  }
+  .product-features {
+    list-style: none; margin-bottom: 1.5rem;
+  }
+  .product-features li {
+    color: var(--muted); font-size: 0.9rem; padding: 4px 0;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .product-features li::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  }
+  .product-card.claude .product-features li::before { background: var(--accent); }
+  .product-card.codex .product-features li::before { background: var(--accent-codex); }
+
+  .product-tags {
+    display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem;
+  }
+  .tag {
+    font-size: 0.78rem; padding: 3px 10px; border-radius: 6px;
+    font-weight: 500;
+  }
+  .product-card.claude .tag { background: rgba(108,92,231,0.1); color: var(--accent); }
+  .product-card.codex .tag { background: rgba(16,163,127,0.1); color: var(--accent-codex); }
+
+  /* Comparison */
+  .compare {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 2.5rem; margin-top: 3rem;
+  }
+  .compare h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 1.5rem; text-align: center; }
+  .compare-grid {
+    display: grid; grid-template-columns: 0.5fr 1fr 1fr; gap: 0;
+    border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+  }
+  .compare-header {
+    background: rgba(255,255,255,0.03); padding: 0.85rem 1.25rem;
+    font-weight: 600; font-size: 0.9rem;
+  }
+  .compare-cell {
+    padding: 0.75rem 1.25rem; font-size: 0.88rem; color: var(--muted);
+    border-top: 1px solid var(--border);
+  }
+  .compare-cell:first-child { font-weight: 500; color: var(--text); }
+
+  /* Footer */
+  .footer {
+    text-align: center; padding: 2rem; color: var(--muted);
+    font-size: 0.85rem; border-top: 1px solid var(--border);
+    max-width: 1100px; margin: 0 auto;
+  }
+  .footer a { color: var(--accent2); }
+
+  @media (max-width: 768px) {
+    .hero { padding: 120px 1.5rem 60px; }
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    .products { grid-template-columns: 1fr; }
+    .nav-links { gap: 1rem; }
+    .compare-grid { font-size: 0.8rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="demo.html" class="nav-logo">
+      <span class="dot"></span> Claude Code Toolkit
+    </a>
+    <ul class="nav-links">
+      <li><a href="demo.html" class="active">首页</a></li>
+      <li><a href="claude-code.html">Claude Code</a></li>
+      <li><a href="codex-codexpp.html">Codex++</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-badge">AI 编程工具链一站式方案</div>
+  <h1>
+    两套方案，<br>
+    <span class="gradient-text">覆盖你的 AI 编程全场景</span>
+  </h1>
+  <p>
+    Claude Code + CC-Switch 深度调优，Codex++ + 国产大模型低成本落地。<br>
+    从安装配置到工程化提效，30 分钟内完成全套部署。
+  </p>
+  <div class="hero-actions">
+    <a href="claude-code.html" class="btn btn-primary">Claude Code 方案 →</a>
+    <a href="codex-codexpp.html" class="btn btn-codex">Codex++ 方案 →</a>
+  </div>
+</section>
+
+<!-- Stats Bar -->
+<div class="stats-bar">
+  <div class="stat-item">
+    <div class="stat-num purple">4 层</div>
+    <div class="stat-desc">Claude Code 优化架构</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num green">13 个</div>
+    <div class="stat-desc">Skills + 7 个智能体</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num teal">5 厂商</div>
+    <div class="stat-desc">国产大模型适配</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num cyan">30-50x</div>
+    <div class="stat-desc">Codex 成本优势</div>
+  </div>
+</div>
+
+<!-- Product Cards -->
+<div class="section">
+  <div class="section-label">
+    <h2>两大产品线</h2>
+    <p>根据你的技术栈和使用场景，选择最适合的方案</p>
+  </div>
+
+  <div class="products">
+    <!-- Claude Code Card -->
+    <a href="claude-code.html" class="product-card claude" style="text-decoration:none;color:inherit;">
+      <div class="product-icon">🧠</div>
+      <h3>Claude Code 调优方案</h3>
+      <p>基于 Anthropic Claude Code CLI + CC-Switch 的深度工程化配置，覆盖产品/设计/研发/测试/部署全链路。</p>
+      <ul class="product-features">
+        <li>四层优化架构（基础 → 行为约束 → 效率 → 工程化）</li>
+        <li>CLAUDE.md 分层记忆 + 路径化 Rules + Hooks 守卫</li>
+        <li>13 个 Skills + 7 个角色型智能体</li>
+        <li>rtk + caveman Token 节省 50-90%</li>
+        <li>一键部署脚本，30 分钟完成全套配置</li>
+      </ul>
+      <div class="product-tags">
+        <span class="tag">Claude Code</span>
+        <span class="tag">CC-Switch</span>
+        <span class="tag">VSCode/Trae</span>
+        <span class="tag">百炼</span>
+      </div>
+      <span class="btn btn-primary" style="width:100%;text-align:center;">查看完整方案 →</span>
+    </a>
+
+    <!-- Codex Card -->
+    <a href="codex-codexpp.html" class="product-card codex" style="text-decoration:none;color:inherit;">
+      <div class="product-icon">🚀</div>
+      <h3>Codex++ 国产大模型方案</h3>
+      <p>OpenAI Codex 桌面版 + Codex++ 增强器 + 国产大模型（DeepSeek/Qwen/GLM/Kimi），成本降低 30-50 倍。</p>
+      <ul class="product-features">
+        <li>5 家国产大模型适配（DeepSeek / Qwen / GLM / Kimi / 豆包）</li>
+        <li>Codex++ 零污染 CDP 注入增强</li>
+        <li>图形化供应商切换，即配即用</li>
+        <li>30-50x 成本优势（DeepSeek ~$0.5/M tokens）</li>
+        <li>15 分钟完成首个国产模型接入</li>
+      </ul>
+      <div class="product-tags">
+        <span class="tag">Codex</span>
+        <span class="tag">Codex++</span>
+        <span class="tag">DeepSeek</span>
+        <span class="tag">Qwen</span>
+        <span class="tag">GLM</span>
+        <span class="tag">Kimi</span>
+      </div>
+      <span class="btn btn-codex" style="width:100%;text-align:center;">查看完整方案 →</span>
+    </a>
+  </div>
+
+  <!-- Quick Compare -->
+  <div class="compare">
+    <h3>快速对比</h3>
+    <div class="compare-grid">
+      <div class="compare-header">维度</div>
+      <div class="compare-header" style="color:var(--accent);">Claude Code</div>
+      <div class="compare-header" style="color:var(--accent-codex);">Codex++</div>
+
+      <div class="compare-cell">基础平台</div>
+      <div class="compare-cell">Anthropic Claude Code CLI</div>
+      <div class="compare-cell">OpenAI Codex 桌面版</div>
+
+      <div class="compare-cell">模型接入</div>
+      <div class="compare-cell">Anthropic 官方 / 阿里云百炼</div>
+      <div class="compare-cell">DeepSeek / Qwen / GLM / Kimi 等</div>
+
+      <div class="compare-cell">成本水平</div>
+      <div class="compare-cell">标准 API 价格</div>
+      <div class="compare-cell" style="color:var(--green);">国产模型 30-50x 便宜</div>
+
+      <div class="compare-cell">配置方式</div>
+      <div class="compare-cell">配置文件 + 脚本部署</div>
+      <div class="compare-cell">图形界面 + 配置文件</div>
+
+      <div class="compare-cell">IDE 集成</div>
+      <div class="compare-cell">VSCode / Trae 插件</div>
+      <div class="compare-cell">桌面 App（独立窗口）</div>
+
+      <div class="compare-cell">调优深度</div>
+      <div class="compare-cell">四层架构 / 13 Skills / 7 Agents</div>
+      <div class="compare-cell">模型配置 / 生态插件 / Skills</div>
+
+      <div class="compare-cell">上手时间</div>
+      <div class="compare-cell">30 分钟（含全套调优）</div>
+      <div class="compare-cell" style="color:var(--green);">15 分钟（首个模型接入）</div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <p>
+    <a href="https://github.com/renp666/claudecode-toolkit" target="_blank">GitHub</a> ·
+    MIT License · 最后更新 2026-06-13
+  </p>
+</div>
+
+</body>
+</html>

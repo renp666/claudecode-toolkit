@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Codex++ 国产大模型方案 - Claude Code Toolkit</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --border: #2a2d3a;
+    --accent: #6c5ce7;
+    --accent2: #00d2ff;
+    --accent-codex: #10a37f;
+    --text: #e1e4ed;
+    --muted: #8b8fa3;
+    --green: #00c853;
+    --orange: #ff9100;
+    --red: #ff5252;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  a { color: var(--accent2); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ===== Navigation ===== */
+  .nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(15,17,23,0.85); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+  }
+  .nav-inner {
+    max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 60px;
+  }
+  .nav-logo {
+    display: flex; align-items: center; gap: 10px;
+    font-weight: 700; font-size: 1.25rem; color: var(--text);
+    text-decoration: none;
+  }
+  .nav-logo:hover { text-decoration: none; }
+  .nav-logo .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--accent); box-shadow: 0 0 12px var(--accent);
+  }
+  .nav-links { display: flex; gap: 2rem; list-style: none; }
+  .nav-links a {
+    color: var(--muted); text-decoration: none; font-size: 0.9rem;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--text); text-decoration: none; }
+  .nav-links a.active {
+    color: var(--text);
+    border-bottom: 2px solid var(--accent-codex);
+  }
+  .btn {
+    padding: 8px 20px; border-radius: 8px; border: none;
+    font-size: 0.9rem; cursor: pointer; font-weight: 600;
+    transition: all 0.2s; text-decoration: none; display: inline-block;
+  }
+  .btn:hover { text-decoration: none; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #7c6ff7; transform: translateY(-1px); }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-outline:hover { border-color: var(--accent); }
+  .btn-codex { background: var(--accent-codex); color: white; }
+  .btn-codex:hover { background: #0d8c6d; transform: translateY(-1px); }
+
+  /* ===== Hero ===== */
+  .hero {
+    padding: 140px 2rem 80px; text-align: center;
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: ''; position: absolute; top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(circle at 50% 50%, rgba(16,163,127,0.08) 0%, transparent 60%);
+    animation: heroPulse 8s ease-in-out infinite;
+  }
+  @keyframes heroPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+  .hero h1 {
+    font-size: clamp(2.5rem, 5vw, 3.5rem); font-weight: 800;
+    position: relative; letter-spacing: -0.02em;
+  }
+  .hero h1 span {
+    background: linear-gradient(135deg, var(--accent-codex), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero p {
+    color: var(--muted); font-size: 1.15rem; max-width: 750px;
+    margin: 1.25rem auto; position: relative;
+  }
+  .hero-actions { display: flex; gap: 1rem; justify-content: center; margin-top: 2rem; position: relative; flex-wrap: wrap; }
+
+  /* ===== Stats ===== */
+  .stats {
+    max-width: 1000px; margin: -30px auto 60px; padding: 0 2rem;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem;
+    position: relative; z-index: 2;
+  }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.5rem; text-align: center;
+    transition: border-color 0.3s, transform 0.3s;
+  }
+  .stat-card:hover { border-color: var(--accent-codex); transform: translateY(-4px); }
+  .stat-value { font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; }
+  .stat-value.g { color: var(--green); }
+  .stat-value.o { color: var(--orange); }
+  .stat-value.c { color: var(--accent-codex); }
+  .stat-value.b { color: var(--accent2); }
+  .stat-label { color: var(--muted); font-size: 0.85rem; margin-top: 4px; }
+
+  /* ===== Section ===== */
+  .section { max-width: 1100px; margin: 0 auto; padding: 40px 2rem 60px; }
+  .section h2 {
+    font-size: 1.8rem; font-weight: 700; margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+    border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .section h2 .sec-num {
+    font-size: 0.9rem; font-weight: 400; color: var(--accent-codex);
+    background: rgba(16,163,127,0.12); padding: 2px 10px; border-radius: 20px;
+  }
+  .section h3 { font-size: 1.15rem; font-weight: 600; margin: 1.5rem 0 0.75rem; color: var(--text); }
+  .section p { color: var(--muted); margin-bottom: 1rem; }
+  .section ul, .section ol { color: var(--muted); margin-left: 1.5rem; margin-bottom: 1rem; }
+  .section li { margin-bottom: 0.4rem; }
+  .section-desc { color: var(--muted); margin-bottom: 2rem; font-size: 1rem; }
+
+  /* ===== Card ===== */
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 2rem; margin-bottom: 1.5rem;
+    transition: border-color 0.3s, transform 0.3s;
+  }
+  .card:hover { border-color: var(--accent-codex); }
+  .card h3 { margin-top: 0; color: var(--text); }
+  .card p { color: var(--muted); }
+
+  /* ===== Cards Grid ===== */
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+  .cards-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+  .cards-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; }
+
+  .card-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; margin-bottom: 1.25rem;
+  }
+  .card-icon.cx { background: rgba(16,163,127,0.15); color: var(--accent-codex); }
+  .card-icon.pu { background: rgba(108,92,231,0.15); color: var(--accent); }
+  .card-icon.bl { background: rgba(0,210,255,0.15); color: var(--accent2); }
+  .card-icon.gr { background: rgba(0,200,83,0.15); color: var(--green); }
+  .card-icon.or { background: rgba(255,145,0,0.15); color: var(--orange); }
+  .card-icon.rd { background: rgba(255,82,82,0.15); color: var(--red); }
+
+  .card h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+  .card p { color: var(--muted); font-size: 0.9rem; line-height: 1.65; }
+
+  /* ===== Step Cards (numbered) ===== */
+  .step-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+  .step-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 2rem; position: relative;
+    transition: border-color 0.3s;
+  }
+  .step-card:hover { border-color: var(--accent-codex); }
+  .step-num {
+    position: absolute; top: -14px; left: 24px;
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--accent-codex); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 0.95rem;
+    box-shadow: 0 0 16px rgba(16,163,127,0.4);
+  }
+  .step-card h3 { margin-top: 0.5rem; font-size: 1.1rem; }
+  .step-card p { color: var(--muted); font-size: 0.9rem; line-height: 1.65; }
+
+  /* ===== Model Provider Cards ===== */
+  .provider-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+  .provider-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.5rem;
+    transition: border-color 0.3s, transform 0.3s;
+    position: relative;
+  }
+  .provider-card:hover { border-color: var(--accent-codex); transform: translateY(-2px); }
+  .provider-card.featured { border-color: rgba(16,163,127,0.35); }
+  .provider-card.featured::before {
+    content: '推荐'; position: absolute; top: 12px; right: 12px;
+    background: var(--accent-codex); color: #fff; font-size: 0.72rem;
+    padding: 2px 10px; border-radius: 10px; font-weight: 600;
+  }
+  .provider-header { display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; }
+  .provider-logo {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 1rem;
+  }
+  .provider-logo.ds { background: rgba(16,163,127,0.15); color: var(--accent-codex); }
+  .provider-logo.qw { background: rgba(0,133,229,0.15); color: #0085e5; }
+  .provider-logo.gl { background: rgba(56,102,255,0.15); color: #3866ff; }
+  .provider-logo.ki { background: rgba(255,145,0,0.15); color: var(--orange); }
+  .provider-logo.ot { background: rgba(108,92,231,0.15); color: var(--accent); }
+  .provider-name { font-weight: 700; font-size: 1.05rem; }
+  .provider-subtitle { font-size: 0.78rem; color: var(--muted); }
+  .provider-models { margin-top: 0.75rem; }
+  .model-tag {
+    display: inline-block; background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 3px 10px; font-size: 0.78rem; color: var(--muted);
+    margin: 0 4px 6px 0;
+  }
+  .model-tag.rec {
+    background: rgba(16,163,127,0.12); border-color: rgba(16,163,127,0.25);
+    color: var(--accent-codex);
+  }
+  .provider-info { margin-top: 0.75rem; font-size: 0.82rem; color: var(--muted); }
+  .provider-info span { color: var(--text); font-weight: 600; }
+
+  /* ===== Code Block ===== */
+  code {
+    background: rgba(108,92,231,0.15); color: var(--accent);
+    padding: 2px 6px; border-radius: 4px; font-size: 0.85em;
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  }
+  pre {
+    background: #0d1117; border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.5rem; overflow-x: auto;
+    margin-bottom: 1.5rem; font-size: 0.85rem; line-height: 1.7;
+    color: #c9d1d9; font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  }
+  .json-key { color: #79c0ff; }
+  .json-string { color: #a5d6ff; }
+  .json-comment { color: #8b949e; font-style: italic; }
+  .json-val { color: var(--accent-codex); }
+
+  /* ===== Config Panel (Screenshot Style) ===== */
+  .config-panel {
+    background: #0d1117; border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden; margin-bottom: 1.5rem;
+  }
+  .config-panel-header {
+    background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border);
+    padding: 0.75rem 1.25rem; display: flex; align-items: center; gap: 0.5rem;
+  }
+  .config-panel-header .dot-row { display: flex; gap: 6px; }
+  .config-panel-header .dot-row span {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+  .config-dot-r { background: #ff5f57; }
+  .config-dot-y { background: #febc2e; }
+  .config-dot-g { background: #28c840; }
+  .config-panel-title { font-size: 0.8rem; color: var(--muted); margin-left: 0.75rem; }
+  .config-panel-body { padding: 1.25rem; }
+  .config-field {
+    display: flex; align-items: center; gap: 1rem; padding: 0.6rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .config-field:last-child { border-bottom: none; }
+  .config-label { width: 110px; font-size: 0.82rem; color: var(--muted); flex-shrink: 0; }
+  .config-value {
+    flex: 1; background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;
+    padding: 6px 12px; font-size: 0.82rem; color: #c9d1d9;
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  }
+  .config-value.api-key { color: var(--muted); }
+
+  /* ===== Architecture Diagram ===== */
+  .arch-diagram {
+    display: flex; align-items: center; gap: 0;
+    margin: 2rem 0; flex-wrap: wrap; justify-content: center;
+  }
+  .arch-box {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.5rem 1.75rem; text-align: center;
+    transition: border-color 0.3s;
+    min-width: 160px;
+  }
+  .arch-box:hover { border-color: var(--accent-codex); }
+  .arch-box-title { font-weight: 700; font-size: 0.95rem; }
+  .arch-box-desc { color: var(--muted); font-size: 0.78rem; margin-top: 0.25rem; }
+  .arch-arrow {
+    font-size: 1.5rem; color: var(--muted);
+    margin: 0 0.75rem; flex-shrink: 0;
+  }
+  .arch-box.cx { border-color: rgba(16,163,127,0.3); }
+  .arch-box.cx .arch-box-title { color: var(--accent-codex); }
+  .arch-box.pp { border-color: rgba(108,92,231,0.3); }
+  .arch-box.pp .arch-box-title { color: var(--accent); }
+  .arch-box.api { border-color: rgba(0,210,255,0.3); }
+  .arch-box.api .arch-box-title { color: var(--accent2); }
+
+  /* ===== Table ===== */
+  .table-wrap {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; overflow: hidden; margin-bottom: 1.5rem;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 0.9rem 1.25rem; text-align: left; }
+  th {
+    font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--muted); font-weight: 600; background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid var(--border);
+  }
+  td { border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.015); }
+
+  /* ===== Badge ===== */
+  .badge {
+    padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 600;
+    display: inline-block;
+  }
+  .badge-green { background: rgba(0,200,83,0.15); color: var(--green); }
+  .badge-orange { background: rgba(255,145,0,0.15); color: var(--orange); }
+  .badge-purple { background: rgba(108,92,231,0.15); color: var(--accent); }
+  .badge-blue { background: rgba(0,210,255,0.15); color: var(--accent2); }
+  .badge-codex { background: rgba(16,163,127,0.15); color: var(--accent-codex); }
+  .badge-red { background: rgba(255,82,82,0.15); color: var(--red); }
+
+  /* ===== Accordion / FAQ ===== */
+  .faq-list { display: flex; flex-direction: column; gap: 0.75rem; }
+  .faq-item {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .faq-item:hover { border-color: var(--accent-codex); }
+  .faq-q {
+    padding: 1.1rem 1.5rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between;
+    font-weight: 600; font-size: 0.95rem;
+    user-select: none;
+  }
+  .faq-q:hover { background: rgba(255,255,255,0.015); }
+  .faq-arrow {
+    color: var(--muted); transition: transform 0.3s;
+    font-size: 0.8rem;
+  }
+  .faq-a {
+    padding: 0 1.5rem 1.1rem; color: var(--muted); font-size: 0.9rem;
+    line-height: 1.7; display: none;
+  }
+  .faq-item.open .faq-a { display: block; }
+  .faq-item.open .faq-arrow { transform: rotate(180deg); }
+
+  /* ===== Floating Quick Nav ===== */
+  .quick-nav {
+    position: fixed; right: 1.5rem; top: 50%; transform: translateY(-50%);
+    z-index: 90; display: flex; flex-direction: column; gap: 6px;
+  }
+  .quick-nav a {
+    display: block; width: 10px; height: 10px; border-radius: 50%;
+    background: var(--border); transition: all 0.3s;
+    text-indent: -9999px; overflow: hidden;
+  }
+  .quick-nav a:hover, .quick-nav a.active {
+    background: var(--accent-codex); box-shadow: 0 0 8px rgba(16,163,127,0.5);
+    width: 12px; height: 12px;
+  }
+  .quick-nav-tooltip {
+    position: fixed; right: 3.5rem; z-index: 91;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 12px; font-size: 0.78rem;
+    color: var(--text); pointer-events: none; opacity: 0;
+    transition: opacity 0.2s; white-space: nowrap;
+  }
+  .quick-nav a:hover + .quick-nav-tooltip,
+  .quick-nav-tooltip.show { opacity: 1; }
+
+  /* ===== Back to Top ===== */
+  .back-top {
+    position: fixed; bottom: 2rem; right: 2rem; z-index: 99;
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--card); border: 1px solid var(--border);
+    color: var(--muted); display: flex; align-items: center;
+    justify-content: center; cursor: pointer; font-size: 1.1rem;
+    transition: all 0.3s; opacity: 0; pointer-events: none;
+    text-decoration: none;
+  }
+  .back-top:hover { text-decoration: none; }
+  .back-top.visible { opacity: 1; pointer-events: auto; }
+  .back-top:hover {
+    border-color: var(--accent-codex); color: var(--accent-codex);
+    transform: translateY(-3px);
+  }
+
+  /* ===== Best Practices / Usage ===== */
+  .bp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+  .bp-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.25rem;
+    transition: border-color 0.3s;
+  }
+  .bp-card:hover { border-color: var(--accent-codex); }
+  .bp-card .bp-num {
+    font-size: 1.6rem; font-weight: 800; color: var(--accent-codex);
+    opacity: 0.35; margin-bottom: 0.5rem;
+  }
+  .bp-card h4 { font-size: 0.95rem; margin-bottom: 0.35rem; }
+  .bp-card p { color: var(--muted); font-size: 0.84rem; line-height: 1.6; }
+
+  /* ===== Scenario Cards ===== */
+  .scenario-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; }
+  .scenario-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.25rem; text-align: center;
+    transition: border-color 0.3s, transform 0.3s;
+  }
+  .scenario-card:hover { border-color: var(--accent-codex); transform: translateY(-3px); }
+  .scenario-icon { font-size: 1.6rem; margin-bottom: 0.75rem; }
+  .scenario-card h4 { font-size: 0.9rem; margin-bottom: 0.35rem; }
+  .scenario-card p { color: var(--muted); font-size: 0.78rem; line-height: 1.5; }
+
+  /* ===== Ecosystem ===== */
+  .eco-section { margin-bottom: 2rem; }
+  .eco-section h4 { font-size: 1rem; margin-bottom: 0.75rem; color: var(--text); }
+  .eco-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+  .eco-item {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1rem 1.25rem;
+    transition: border-color 0.3s;
+  }
+  .eco-item:hover { border-color: var(--accent-codex); }
+  .eco-item-name { font-weight: 600; font-size: 0.9rem; }
+  .eco-item-desc { color: var(--muted); font-size: 0.8rem; margin-top: 0.25rem; }
+  .eco-item-lang {
+    display: inline-block; font-size: 0.7rem; color: var(--muted);
+    background: rgba(255,255,255,0.05); padding: 1px 8px;
+    border-radius: 4px; margin-top: 0.35rem;
+  }
+
+  /* ===== Footer ===== */
+  footer {
+    border-top: 1px solid var(--border); padding: 2.5rem 2rem;
+    text-align: center; color: var(--muted); font-size: 0.85rem;
+    margin-top: 4rem;
+    max-width: 1100px; margin-left: auto; margin-right: auto;
+  }
+  footer .footer-links { display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap; margin-bottom: 1rem; }
+  footer .footer-note { font-size: 0.8rem; color: var(--muted); }
+
+  /* ===== Breadcrumb ===== */
+  .breadcrumb { color: var(--muted); font-size: 0.85rem; margin-bottom: 1rem; }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--accent2); }
+
+  /* ===== Pricing Highlight ===== */
+  .pricing-highlight { background: rgba(16,163,127,0.06); padding: 3px 8px; border-radius: 4px; }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 900px) {
+    .cards, .step-cards, .provider-cards { grid-template-columns: repeat(2, 1fr); }
+    .cards-2 { grid-template-columns: 1fr; }
+    .bp-grid { grid-template-columns: repeat(2, 1fr); }
+    .scenario-grid { grid-template-columns: repeat(2, 1fr); }
+    .eco-grid { grid-template-columns: repeat(2, 1fr); }
+    .arch-diagram { flex-direction: column; }
+    .arch-arrow { transform: rotate(90deg); margin: 0.25rem 0; }
+  }
+  @media (max-width: 768px) {
+    .nav-links { display: none; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .cards, .step-cards, .provider-cards, .bp-grid { grid-template-columns: 1fr; }
+    .scenario-grid, .eco-grid { grid-template-columns: 1fr; }
+    .cards-4 { grid-template-columns: repeat(2, 1fr); }
+    .hero h1 { font-size: 2rem; }
+    .quick-nav { display: none; }
+    .config-field { flex-direction: column; align-items: flex-start; gap: 0.25rem; }
+    .config-label { width: auto; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== Navigation ===== -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-logo" href="demo.html"><span class="dot"></span>Claude Code Toolkit</a>
+    <ul class="nav-links">
+      <li><a href="demo.html">首页</a></li>
+      <li><a href="claude-code.html">Claude Code</a></li>
+      <li><a href="codex-codexpp.html" class="active">Codex</a></li>
+    </ul>
+    <a class="btn btn-codex" href="#install">快速上手</a>
+  </div>
+</nav>
+
+<!-- ===== Floating Quick Nav ===== -->
+<nav class="quick-nav" id="quickNav">
+  <a href="#hero" title="概览"></a>
+  <a href="#what-is-codex" title="什么是Codex"></a>
+  <a href="#install" title="快速安装"></a>
+  <a href="#models" title="国产模型配置"></a>
+  <a href="#usage" title="使用指南"></a>
+  <a href="#ecosystem" title="生态资源"></a>
+  <a href="#troubleshooting" title="故障排查"></a>
+  <a href="#pricing" title="成本对比"></a>
+</nav>
+
+<!-- ===== Hero ===== -->
+<section class="hero" id="hero">
+  <div class="breadcrumb"><a href="demo.html">首页</a> / Codex++ 国产大模型方案</div>
+  <h1>Codex++ <span>国产大模型落地指南</span></h1>
+  <p>OpenAI Codex 桌面版 + Codex++ 增强器 &rarr; DeepSeek / Qwen / GLM / Kimi 等国产大模型，成本降低 30-50 倍，15 分钟完成接入</p>
+  <div class="hero-actions">
+    <a class="btn btn-codex" href="#install" style="padding:12px 28px;font-size:1rem;">快速安装</a>
+    <a class="btn btn-outline" href="#models">查看模型配置 &rarr;</a>
+  </div>
+</section>
+
+<!-- ===== Stats ===== -->
+<div class="stats">
+  <div class="stat-card">
+    <div class="stat-value c">5 个</div>
+    <div class="stat-label">国产模型供应商</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value g">30-50x</div>
+    <div class="stat-label">成本优势</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value b">15 分钟</div>
+    <div class="stat-label">快速接入</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value o">全平台</div>
+    <div class="stat-label">Windows / macOS</div>
+  </div>
+</div>
+
+<!-- ===== Section 1: 什么是 Codex ===== -->
+<section class="section" id="what-is-codex">
+  <h2><span class="sec-num">01</span> 什么是 Codex</h2>
+  <p class="section-desc">OpenAI 推出的 AI 编程智能体桌面应用，对标 Claude Code，具备完整的代码库理解与操作能力。</p>
+
+  <div class="cards">
+    <div class="card">
+      <div class="card-icon cx">&#128187;</div>
+      <h3>全代码库感知</h3>
+      <p>自动扫描并理解整个项目代码库结构，提供跨文件的上下文感知能力，无需手动描述项目架构。</p>
+    </div>
+    <div class="card">
+      <div class="card-icon pu">&#9997;&#65039;</div>
+      <h3>文件编辑能力</h3>
+      <p>直接创建、修改、删除项目文件，支持精确的代码差异编辑，无需复制粘贴，真正实现 AI 驱动的开发工作流。</p>
+    </div>
+    <div class="card">
+      <div class="card-icon gr">&#9889;</div>
+      <h3>Shell 命令执行</h3>
+      <p>在终端中直接运行构建、测试、git 命令，自动处理依赖安装和环境配置，完整覆盖开发全流程。</p>
+    </div>
+  </div>
+
+  <h3>为什么选择国产模型？</h3>
+  <p>GPT-5.5 的 API 定价高达 <strong style="color:var(--text)">$15-30 / 百万 Token</strong>，而国产头部模型仅需 <strong style="color:var(--accent-codex)">~$0.3-0.8 / 百万 Token</strong>，成本差距达到惊人的 <strong style="color:var(--accent-codex)">30-50 倍</strong>。对于日常高频使用场景，年化成本差异可达数万元。</p>
+
+  <p>Codex++ 通过 CDP 注入技术实现零污染桥接，在保留 Codex 桌面版所有原生能力的前提下，无缝对接国产大模型 API，让你享受 OpenAI 的工程体验 + 国产模型的价格优势。</p>
+
+  <!-- Architecture Diagram -->
+  <div class="arch-diagram">
+    <div class="arch-box cx">
+      <div class="arch-box-title">Codex 桌面应用</div>
+      <div class="arch-box-desc">OpenAI 官方客户端<br>代码库理解 · 文件编辑 · Shell</div>
+    </div>
+    <div class="arch-arrow">&rarr;</div>
+    <div class="arch-box pp">
+      <div class="arch-box-title">Codex++ 增强器</div>
+      <div class="arch-box-desc">CDP 注入 · 零污染<br>协议桥接 · 模型路由</div>
+    </div>
+    <div class="arch-arrow">&rarr;</div>
+    <div class="arch-box api">
+      <div class="arch-box-title">国产模型 API</div>
+      <div class="arch-box-desc">DeepSeek · Qwen · GLM<br>Kimi · 豆包 · 文心一言</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Section 2: 快速安装 ===== -->
+<section class="section" id="install">
+  <h2><span class="sec-num">02</span> 快速安装</h2>
+  <p class="section-desc">三步完成 Codex + Codex++ + 国产模型配置，全程约 15 分钟。</p>
+
+  <div class="step-cards">
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <h3>安装 Codex 桌面版</h3>
+      <p>从 OpenAI 官网或 Microsoft Store 下载安装。</p>
+      <p style="margin-top:0.75rem;">
+        <span class="badge badge-blue">Windows</span> .exe / .msix<br>
+        <span class="badge badge-purple">macOS</span> .dmg
+      </p>
+      <p style="font-size:0.8rem;margin-top:0.75rem;">
+        <a href="https://openai.com/codex" target="_blank">openai.com/codex &rarr;</a>
+      </p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <h3>安装 Codex++ 增强器</h3>
+      <p>从 GitHub Releases 下载最新版本安装包，运行安装程序后启动 Codex++。</p>
+      <p style="font-size:0.8rem;margin-top:0.75rem;color:var(--accent-codex);font-weight:600;">
+        核心原理：零污染 CDP 注入
+      </p>
+      <p style="font-size:0.75rem;color:var(--muted);">
+        不修改 Codex 二进制文件，通过 Chrome DevTools Protocol 在运行时动态桥接模型请求。
+      </p>
+      <p style="font-size:0.8rem;margin-top:0.5rem;">
+        <a href="https://github.com/anthropics/claude-code" target="_blank">GitHub Releases &rarr;</a>
+      </p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <h3>配置国产模型供应商</h3>
+      <p>在 Codex++ 管理面板中填入模型供应商信息，选择"设为当前使用"即可。</p>
+      <p style="font-size:0.8rem;margin-top:0.5rem;color:var(--muted);">
+        支持 Chat Completions 协议的模型均可接入，5 分钟内完成第一条对话。
+      </p>
+    </div>
+  </div>
+
+  <!-- Config Panel -->
+  <div class="config-panel" style="margin-top:2rem;">
+    <div class="config-panel-header">
+      <div class="dot-row">
+        <span class="config-dot-r"></span>
+        <span class="config-dot-y"></span>
+        <span class="config-dot-g"></span>
+      </div>
+      <span class="config-panel-title">Codex++ 供应商配置 &mdash; DeepSeek</span>
+    </div>
+    <div class="config-panel-body">
+      <div class="config-field">
+        <span class="config-label">供应商名称</span>
+        <span class="config-value">DeepSeek</span>
+      </div>
+      <div class="config-field">
+        <span class="config-label">模型 ID</span>
+        <span class="config-value" style="color:var(--accent-codex);">deepseek-v4-pro</span>
+      </div>
+      <div class="config-field">
+        <span class="config-label">Base URL</span>
+        <span class="config-value">https://api.deepseek.com</span>
+      </div>
+      <div class="config-field">
+        <span class="config-label">上游协议</span>
+        <span class="config-value">Chat Completions</span>
+      </div>
+      <div class="config-field">
+        <span class="config-label">API Key</span>
+        <span class="config-value api-key">sk-xxxxxxxxxxxxxxxxxxxxxxxx</span>
+      </div>
+    </div>
+  </div>
+
+  <p style="font-size:0.85rem;color:var(--muted);margin-top:-0.5rem;">
+    &#9888;&#65039; 常见配置错误：上游协议务必选择 <strong style="color:var(--accent-codex);">Chat Completions</strong>，不要选 Responses。配置完成后必须点击 <strong style="color:var(--text);">"设为当前使用"</strong> 才会生效。
+  </p>
+</section>
+
+<!-- ===== Section 3: 国产模型配置 ===== -->
+<section class="section" id="models">
+  <h2><span class="sec-num">03</span> 国产模型配置</h2>
+  <p class="section-desc">五大模型供应商详细配置参数与推荐模型选择。</p>
+
+  <div class="provider-cards">
+    <!-- DeepSeek -->
+    <div class="provider-card featured">
+      <div class="provider-header">
+        <div class="provider-logo ds">DS</div>
+        <div>
+          <div class="provider-name">DeepSeek</div>
+          <div class="provider-subtitle">旗舰编程模型</div>
+        </div>
+      </div>
+      <div class="provider-models">
+        <span class="model-tag rec">deepseek-v4-pro</span>
+        <span class="model-tag">deepseek-v4-flash</span>
+      </div>
+      <div class="provider-info">
+        上下文：<span>128K</span><br>
+        Base URL：<span>api.deepseek.com</span><br>
+        最佳场景：<span>日常编码首选</span>
+      </div>
+    </div>
+
+    <!-- Qwen -->
+    <div class="provider-card">
+      <div class="provider-header">
+        <div class="provider-logo qw">QW</div>
+        <div>
+          <div class="provider-name">通义千问 Qwen</div>
+          <div class="provider-subtitle">阿里云百炼平台</div>
+        </div>
+      </div>
+      <div class="provider-models">
+        <span class="model-tag rec">qwen-coder-plus</span>
+        <span class="model-tag">qwen-max</span>
+        <span class="model-tag">qwen-plus</span>
+        <span class="model-tag">qwen-turbo</span>
+      </div>
+      <div class="provider-info">
+        Base URL：<span>dashscope.aliyuncs.com</span><br>
+        平台：<span>阿里云百炼</span>
+      </div>
+    </div>
+
+    <!-- GLM -->
+    <div class="provider-card">
+      <div class="provider-header">
+        <div class="provider-logo gl">GL</div>
+        <div>
+          <div class="provider-name">智谱 GLM</div>
+          <div class="provider-subtitle">open.bigmodel.cn</div>
+        </div>
+      </div>
+      <div class="provider-models">
+        <span class="model-tag rec">glm-4-plus</span>
+        <span class="model-tag">glm-4-flash</span>
+        <span class="model-tag">glm-4-air</span>
+      </div>
+      <div class="provider-info">
+        Base URL：<span>open.bigmodel.cn</span><br>
+        亮点：<span>flash 免费版</span>
+      </div>
+    </div>
+
+    <!-- Kimi -->
+    <div class="provider-card">
+      <div class="provider-header">
+        <div class="provider-logo ki">KM</div>
+        <div>
+          <div class="provider-name">Kimi (Moonshot)</div>
+          <div class="provider-subtitle">超长上下文</div>
+        </div>
+      </div>
+      <div class="provider-models">
+        <span class="model-tag rec">moonshot-v1-128k</span>
+        <span class="model-tag">moonshot-v1-32k</span>
+        <span class="model-tag">moonshot-v1-8k</span>
+      </div>
+      <div class="provider-info">
+        Base URL：<span>api.moonshot.cn</span><br>
+        亮点：<span>128K 超长上下文</span>
+      </div>
+    </div>
+
+    <!-- Others -->
+    <div class="provider-card">
+      <div class="provider-header">
+        <div class="provider-logo ot">+</div>
+        <div>
+          <div class="provider-name">其他平台</div>
+          <div class="provider-subtitle">更多选择</div>
+        </div>
+      </div>
+      <div class="provider-models" style="font-size:0.82rem;color:var(--muted);line-height:1.8;">
+        &bull; 豆包 (火山引擎)<br>
+        &bull; 文心一言 (百度千帆)<br>
+        &bull; 讯飞星火<br>
+        &bull; OpenRouter 聚合
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Section 4: 使用指南 ===== -->
+<section class="section" id="usage">
+  <h2><span class="sec-num">04</span> 使用指南</h2>
+  <p class="section-desc">掌握 Codex + Codex++ 的核心工作流、内置命令与最佳实践。</p>
+
+  <h3>基础工作流</h3>
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+      <span style="background:var(--accent-codex);color:#fff;padding:6px 16px;border-radius:8px;font-weight:600;font-size:0.9rem;">1. 启动 Codex</span>
+      <span style="color:var(--muted);">&rarr;</span>
+      <span style="background:var(--accent);color:#fff;padding:6px 16px;border-radius:8px;font-weight:600;font-size:0.9rem;">2. Codex++ 自动注入</span>
+      <span style="color:var(--muted);">&rarr;</span>
+      <span style="background:var(--accent2);color:var(--bg);padding:6px 16px;border-radius:8px;font-weight:600;font-size:0.9rem;">3. 选择供应商</span>
+      <span style="color:var(--muted);">&rarr;</span>
+      <span style="background:var(--green);color:#fff;padding:6px 16px;border-radius:8px;font-weight:600;font-size:0.9rem;">4. 开始编码</span>
+    </div>
+  </div>
+
+  <h3>内置命令 (7 个)</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>命令</th><th>功能</th><th>使用场景</th></tr></thead>
+      <tbody>
+        <tr><td><code>/clear</code></td><td>清空当前会话上下文</td><td>切换话题，释放 Token 占用</td></tr>
+        <tr><td><code>/undo</code></td><td>撤销上一次编辑操作</td><td>回退 AI 产生的错误修改</td></tr>
+        <tr><td><code>/diff</code></td><td>查看当前会话的所有变更</td><td>审查改动范围，决定是否提交</td></tr>
+        <tr><td><code>/commit</code></td><td>自动生成 commit message 并提交</td><td>完成一个功能点后的标准操作</td></tr>
+        <tr><td><code>/model</code></td><td>切换当前使用的模型供应商</td><td>在不同模型间快速切换对比效果</td></tr>
+        <tr><td><code>/context</code></td><td>查看当前上下文使用情况</td><td>监控 Token 消耗，判断是否需要 /clear</td></tr>
+        <tr><td><code>/help</code></td><td>显示所有可用命令与帮助</td><td>忘记命令时的快速参考</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>五大典型场景</h3>
+  <div class="scenario-grid">
+    <div class="scenario-card">
+      <div class="scenario-icon">&#128270;</div>
+      <h4>代码理解</h4>
+      <p>让 Codex 阅读并解释陌生代码库的架构与逻辑，"这个项目是怎么组织异步请求的？"</p>
+    </div>
+    <div class="scenario-card">
+      <div class="scenario-icon">&#128030;</div>
+      <h4>Bug 修复</h4>
+      <p>粘贴错误信息或描述异常行为，Codex 自动定位根因并生成修复代码。</p>
+    </div>
+    <div class="scenario-card">
+      <div class="scenario-icon">&#128640;</div>
+      <h4>功能开发</h4>
+      <p>用自然语言描述新功能需求，AI 规划实现方案并按步骤完成编码与测试。</p>
+    </div>
+    <div class="scenario-card">
+      <div class="scenario-icon">&#128260;</div>
+      <h4>代码重构</h4>
+      <p>大函数拆分、提取公共逻辑、改善命名与结构，保持行为不变的前提下提升代码质量。</p>
+    </div>
+    <div class="scenario-card">
+      <div class="scenario-icon">&#9989;</div>
+      <h4>测试编写</h4>
+      <p>为已有代码生成单元测试、集成测试，并自动运行验证直到全部通过。</p>
+    </div>
+  </div>
+
+  <h3>六大最佳实践</h3>
+  <div class="bp-grid">
+    <div class="bp-card">
+      <div class="bp-num">01</div>
+      <h4>一次只做一件事</h4>
+      <p>每次对话聚焦一个明确目标，完成并通过验证后再开启新话题，避免上下文混乱。</p>
+    </div>
+    <div class="bp-card">
+      <div class="bp-num">02</div>
+      <h4>先读后改</h4>
+      <p>让 AI 先阅读相关文件，理解完整上下文后再提出修改方案，避免"盲改"。</p>
+    </div>
+    <div class="bp-card">
+      <div class="bp-num">03</div>
+      <h4>小步提交</h4>
+      <p>每完成一个原子操作就用 <code>/commit</code> 提交，保持 git 历史清晰可追溯。</p>
+    </div>
+    <div class="bp-card">
+      <div class="bp-num">04</div>
+      <h4>写清楚验收标准</h4>
+      <p>在 prompt 中描述"完成后的行为是什么"，让 AI 有明确的目标和停止条件。</p>
+    </div>
+    <div class="bp-card">
+      <div class="bp-num">05</div>
+      <h4>善用 Skills</h4>
+      <p>利用社区 Skills 快速获得专业领域知识（测试驱动、安全审计、性能分析等）。</p>
+    </div>
+    <div class="bp-card">
+      <div class="bp-num">06</div>
+      <h4>定期清理上下文</h4>
+      <p>长会话中关注 <code>/context</code> 的 Token 用量，必要时 <code>/clear</code> 或开新会话。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Section 5: 生态资源 ===== -->
+<section class="section" id="ecosystem">
+  <h2><span class="sec-num">05</span> 生态资源</h2>
+  <p class="section-desc">围绕 Codex / Codex++ 的协议工具、社区插件与技能仓库。</p>
+
+  <!-- Protocol Tools -->
+  <div class="eco-section">
+    <h4>&#128295; 协议工具 (5 个)</h4>
+    <div class="eco-grid">
+      <div class="eco-item">
+        <div class="eco-item-name">codex-proxy</div>
+        <div class="eco-item-desc">Node.js 反向代理，智能路由与请求重写</div>
+        <span class="eco-item-lang">Node.js</span>
+      </div>
+      <div class="eco-item">
+        <div class="eco-item-name">codex-relay</div>
+        <div class="eco-item-desc">Rust 高性能中继，极低延迟转发</div>
+        <span class="eco-item-lang">Rust</span>
+      </div>
+      <div class="eco-item">
+        <div class="eco-item-name">Moon Bridge</div>
+        <div class="eco-item-desc">轻量级 Go 桥接器，支持多供应商负载均衡</div>
+        <span class="eco-item-lang">Go</span>
+      </div>
+      <div class="eco-item">
+        <div class="eco-item-name">CodeProxy CLI</div>
+        <div class="eco-item-desc">Python 命令行代理，一键启动/切换</div>
+        <span class="eco-item-lang">Python</span>
+      </div>
+      <div class="eco-item">
+        <div class="eco-item-name">CC-Switch</div>
+        <div class="eco-item-desc">多工具聚合切换器，Claude Code / Codex 一键切换</div>
+        <span class="eco-item-lang">跨平台</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Community Plugins -->
+  <div class="eco-section">
+    <h4>&#129302; 社区插件 (6 个)</h4>
+    <div class="eco-grid">
+      <div class="eco-item">
+        <div class="eco-item-name">Superpowers</div>
+        <div class="eco-item-desc">为 Codex 增加 30+ 实用能力，包括高级搜索、批量操作</div>
+      </div>
+      <div class="eco-item">
+        <div class="eco-item-name">Context7</div>
+        <div class="eco-item-desc">智能上下文管理扩展，自动总结长期会话要点</div>
+      </div>
+      <div class="eco-item">
+        <div class="eco-item-name">Composio</div>
+        <div class="eco-item-desc">连接 200+ 外部工具与 API，扩展 Codex 集成能力</div>
+      </div>
+      <div class="eco-item">
+        <div class="eco-item-name">Trail of Bits Skills</div>
+        <div class="eco-item-desc">专业安全审计技能包，自动检测常见漏洞模式</div>
+      </div>
+      <div class="eco-item">
+        <div class="eco-item-name">GitNexus</div>
+        <div class="eco-item-desc">增强 Git 工作流集成，自动 PR 描述与 CI 联动</div>
+      </div>
+      <div class="eco-item">
+        <div class="eco-item-name">Build Web Apps</div>
+        <div class="eco-item-desc">一键构建完整 Web 应用的技能组合</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Skills Repo -->
+  <div class="eco-section">
+    <h4>&#128214; Skills 仓库</h4>
+    <div class="eco-grid">
+      <div class="eco-item" style="border-color:rgba(16,163,127,0.25);">
+        <div class="eco-item-name" style="color:var(--accent-codex);">openai/skills</div>
+        <div class="eco-item-desc">OpenAI 官方 Skills 仓库，涵盖测试、安全、性能等全生命周期</div>
+        <span class="eco-item-lang" style="color:var(--accent-codex);">&#9733; 19.3K Stars</span>
+      </div>
+      <div class="eco-item">
+        <div class="eco-item-name">test-driven-development</div>
+        <div class="eco-item-desc">测试驱动开发 Skills，红-绿-重构循环</div>
+      </div>
+      <div class="eco-item">
+        <div class="eco-item-name">code-review-excellence</div>
+        <div class="eco-item-desc">代码审查最佳实践，结构化的审查清单与建议</div>
+      </div>
+      <div class="eco-item">
+        <div class="eco-item-name">performance-optimizer</div>
+        <div class="eco-item-desc">前端性能优化技能包，Core Web Vitals 诊断</div>
+      </div>
+      <div class="eco-item">
+        <div class="eco-item-name">api-design-patterns</div>
+        <div class="eco-item-desc">RESTful / GraphQL API 设计模式与最佳实践</div>
+      </div>
+      <div class="eco-item">
+        <div class="eco-item-name">database-migration-expert</div>
+        <div class="eco-item-desc">数据库迁移、Schema 变更的安全操作技能</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Section 6: 故障排查 ===== -->
+<section class="section" id="troubleshooting">
+  <h2><span class="sec-num">06</span> 故障排查</h2>
+  <p class="section-desc">常见问题与解决方案，涵盖配置、连接、模型行为等场景。</p>
+
+  <div class="faq-list">
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        <span>&#9888;&#65039; 模型无响应 / 返回 404</span>
+        <span class="faq-arrow">&#9660;</span>
+      </div>
+      <div class="faq-a">
+        这是最高频的配置问题。请检查：<strong>上游协议必须选择 Chat Completions</strong>，不要错误选择 Responses 协议。如果已确认协议正确，再检查 Base URL 是否正确（去掉末尾多余斜杠），以及 API Key 是否有效。
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        <span>&#128308; 按钮灰色无法点击</span>
+        <span class="faq-arrow">&#9660;</span>
+      </div>
+      <div class="faq-a">
+        通常是因为 Codex 进程没有完全退出。请<strong>完全退出 Codex</strong>（Windows 系统托盘右键退出 / macOS Cmd+Q），确认进程列表中没有 Codex 相关进程后，重新启动 Codex 和 Codex++。
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        <span>&#128273; 配置未生效</span>
+        <span class="faq-arrow">&#9660;</span>
+      </div>
+      <div class="faq-a">
+        填写完供应商配置后，必须点击<strong>"设为当前使用"</strong>按钮才能激活该配置。仅保存而不设为当前使用，Codex++ 不会路由请求到该供应商。
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        <span>&#9203; 连接超时</span>
+        <span class="faq-arrow">&#9660;</span>
+      </div>
+      <div class="faq-a">
+        依次排查：(1) 网络是否能正常访问 API 域名 —— 用浏览器打开 Base URL 测试；(2) 是否使用代理 —— 检查系统代理设置或环境变量 HTTP_PROXY / HTTPS_PROXY；(3) API Key 是否过期或余额不足 —— 登录供应商控制台确认。
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        <span>&#129302; Tool Calling 不工作</span>
+        <span class="faq-arrow">&#9660;</span>
+      </div>
+      <div class="faq-a">
+        不是所有国产模型都支持 function calling / tool calling。请确认你选择的模型在官方文档中明确标注支持该特性。DeepSeek V4 Pro、Qwen-Coder-Plus、GLM-4-Plus 均支持；部分 flash/turbo 版本可能不支持或能力受限。
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        <span>&#128196; 上下文过长导致异常</span>
+        <span class="faq-arrow">&#9660;</span>
+      </div>
+      <div class="faq-a">
+        当模型行为开始变得不稳定（重复输出、遗漏指令、前后矛盾）时，通常是上下文接近上限。解决方案：(1) 使用 <code>/clear</code> 清空当前会话；(2) 使用 <code>/context</code> 查看实际占用；(3) 开启新会话处理新话题。建议单个会话不要超过 100K Token。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Section 7: 成本对比 ===== -->
+<section class="section" id="pricing">
+  <h2><span class="sec-num">07</span> 成本对比</h2>
+  <p class="section-desc">基于 2026 年 6 月实测数据的主要模型 API 定价对比，国产模型具有显著成本优势。</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>模型</th>
+          <th>输入价格 ($/M tokens)</th>
+          <th>输出价格 ($/M tokens)</th>
+          <th>相对成本</th>
+          <th>备注</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="background:rgba(255,82,82,0.03);">
+          <td><strong>GPT-5.5</strong></td>
+          <td>$15.00</td>
+          <td>$30.00</td>
+          <td><span class="badge badge-red">基准</span></td>
+          <td>OpenAI 旗舰</td>
+        </tr>
+        <tr style="background:rgba(16,163,127,0.03);">
+          <td><strong>DeepSeek V4 Pro</strong></td>
+          <td>~$0.50</td>
+          <td>~$2.00</td>
+          <td><span class="badge badge-green">30-50x 便宜</span></td>
+          <td>编程首选</td>
+        </tr>
+        <tr>
+          <td><strong>Qwen-Coder-Plus</strong></td>
+          <td>~$0.80</td>
+          <td>~$3.20</td>
+          <td><span class="badge badge-green">~20x 便宜</span></td>
+          <td>阿里云百炼</td>
+        </tr>
+        <tr style="background:rgba(16,163,127,0.03);">
+          <td><strong>GLM-4 Plus</strong></td>
+          <td>~$0.30</td>
+          <td>~$1.20</td>
+          <td><span class="badge badge-green">50x+ 便宜</span></td>
+          <td>flash 版免费</td>
+        </tr>
+        <tr>
+          <td><strong>Kimi (128K)</strong></td>
+          <td>~$0.60</td>
+          <td>~$2.40</td>
+          <td><span class="badge badge-green">~25x 便宜</span></td>
+          <td>超长上下文</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card" style="border-color:rgba(16,163,127,0.2);">
+    <h3 style="color:var(--accent-codex);">&#128176; 年度成本估算</h3>
+    <p style="margin-bottom:0;">假设日均消耗 <strong style="color:var(--text);">50 万 Token</strong>（中等强度使用）：</p>
+    <div style="display:flex;gap:2rem;flex-wrap:wrap;margin-top:1rem;">
+      <div>
+        <span style="color:var(--muted);font-size:0.85rem;">GPT-5.5 年费</span><br>
+        <span style="font-size:1.5rem;font-weight:800;color:var(--red);">~$8,200</span>
+      </div>
+      <div style="color:var(--muted);font-size:2rem;">&rarr;</div>
+      <div>
+        <span style="color:var(--muted);font-size:0.85rem;">DeepSeek V4 年费</span><br>
+        <span style="font-size:1.5rem;font-weight:800;color:var(--accent-codex);">~$160-270</span>
+      </div>
+      <div style="align-self:center;">
+        <span class="badge badge-green" style="font-size:0.9rem;padding:6px 14px;">节省 ~$8,000/年</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Footer ===== -->
+<footer>
+  <div class="footer-links">
+    <a href="https://openai.com/codex" target="_blank">OpenAI Codex</a>
+    <a href="https://github.com/anthropics/claude-code" target="_blank">Codex++ 仓库</a>
+    <a href="https://api-docs.deepseek.com" target="_blank">DeepSeek 文档</a>
+    <a href="https://help.aliyun.com/zh/model-studio" target="_blank">通义千问 文档</a>
+    <a href="https://open.bigmodel.cn/dev/api" target="_blank">智谱 GLM 文档</a>
+    <a href="https://platform.moonshot.cn/docs" target="_blank">Kimi 文档</a>
+  </div>
+  <p class="footer-note">本方案基于 2026 年 6 月实测数据，API 价格可能随供应商调整而变动。请以各平台官网最新定价为准。</p>
+  <p style="margin-top:0.75rem;"><a href="demo.html">&#8592; 返回首页</a> &middot; Claude Code Toolkit &middot; 2026</p>
+</footer>
+
+<!-- ===== Back to Top ===== -->
+<a href="#hero" class="back-top" id="backTop" title="返回顶部">&#9650;</a>
+
+<!-- ===== Scripts ===== -->
+<script>
+  // Back to top visibility
+  const backTop = document.getElementById('backTop');
+  window.addEventListener('scroll', () => {
+    backTop.classList.toggle('visible', window.scrollY > 400);
+  });
+
+  // Quick nav active section tracking
+  const quickNavLinks = document.querySelectorAll('.quick-nav a');
+  const sections = [];
+  quickNavLinks.forEach(link => {
+    const id = link.getAttribute('href').substring(1);
+    const el = document.getElementById(id);
+    if (el) sections.push({ el, link });
+  });
+
+  function updateQuickNav() {
+    const scrollY = window.scrollY + 120;
+    let current = sections[0];
+    for (const s of sections) {
+      if (s.el.offsetTop <= scrollY) current = s;
+    }
+    quickNavLinks.forEach(l => l.classList.remove('active'));
+    if (current) current.link.classList.add('active');
+  }
+
+  window.addEventListener('scroll', updateQuickNav);
+  updateQuickNav();
+
+  // Open first FAQ item by default
+  const faqItems = document.querySelectorAll('.faq-item');
+  if (faqItems.length > 0) faqItems[0].classList.add('open');
+</script>
+
+</body>
+</html>

@@ -11,15 +11,12 @@
 
 ## 在线预览
 
-**[Claude Code 调优方案 — 交互式文档](https://renp666.github.io/claudecode-pages/demo.html)**
+**[Claude Code Toolkit — 交互式文档](https://renp666.github.io/claudecode-pages/demo.html)**
 
 包含页面：
-- [首页](https://renp666.github.io/claudecode-pages/demo.html) — 四层架构概览、核心能力、实施路径
-- [方案概览](https://renp666.github.io/claudecode-pages/overview.html) — 核心问题、四层架构详解、环境规划
-- [核心能力](https://renp666.github.io/claudecode-pages/capabilities.html) — CLAUDE.md、Rules、Hooks、Commands、Agents、Skills
-- [实施路径](https://renp666.github.io/claudecode-pages/roadmap.html) — 三阶段时间线、Skills 评估、CC-Switch
-- [效果数据](https://renp666.github.io/claudecode-pages/metrics.html) — Token 管理、命令速查、会话策略
-- [快速上手](https://renp666.github.io/claudecode-pages/quickstart.html) — 前置条件、一键部署、手动部署、验证清单
+- [首页](https://renp666.github.io/claudecode-pages/demo.html) — 两大产品线概览 + 快速对比
+- [Claude Code 方案](https://renp666.github.io/claudecode-pages/claude-code.html) — 四层架构、核心能力、快速上手、效果数据、实施路径
+- [Codex++ 方案](https://renp666.github.io/claudecode-pages/codex-codexpp.html) — 安装配置、5厂商模型、使用指南、生态资源、故障排查、成本对比
 
 ---
 
@@ -81,41 +78,41 @@ git clone https://github.com/renp666/claudecode-toolkit.git
 cd claudecode-toolkit
 
 # 部署全部配置到目标项目
-.\03-claude-optimize\scripts\setup-claude.ps1 -Phase all -ProjectDir "D:\your-project"
+.\1-claudeCode\02-claude-optimize-调优方案\scripts\setup-claude.ps1 -Phase all -ProjectDir "D:\your-project"
 
 # 安装提效工具（可选）
-.\03-claude-optimize\.claude_global\tools\install-tools.ps1 -Tool all -AddToPath
+.\1-claudeCode\02-claude-optimize-调优方案\01global-全局级可复制配置\tools\install-tools.ps1 -Tool all -AddToPath
 ```
 
 ### 方式二：手动部署
 
 ```powershell
 # 1. 部署全局配置
-Copy-Item "03-claude-optimize\.claude_global\CLAUDE.md" "$env:USERPROFILE\.claude\CLAUDE.md"
-Copy-Item "03-claude-optimize\.claude_global\commands\*.md" "$env:USERPROFILE\.claude\commands\"
+Copy-Item "1-claudeCode\02-claude-optimize-调优方案\01global-全局级可复制配置\CLAUDE.md" "$env:USERPROFILE\.claude\CLAUDE.md"
+Copy-Item "1-claudeCode\02-claude-optimize-调优方案\01global-全局级可复制配置\commands\*.md" "$env:USERPROFILE\.claude\commands\"
 
 # 2. 部署项目配置（templates 包含完整 .claude 结构）
 $proj = "D:\your-project"
-Copy-Item "03-claude-optimize\templates\CLAUDE.md" "$proj\CLAUDE.md"
-Copy-Item "03-claude-optimize\templates\.mcp.json" "$proj\.mcp.json"
-Copy-Item "03-claude-optimize\templates\.claude" "$proj\.claude" -Recurse
+Copy-Item "1-claudeCode\02-claude-optimize-调优方案\02templates-项目级可复制文件目录\CLAUDE.md" "$proj\CLAUDE.md"
+Copy-Item "1-claudeCode\02-claude-optimize-调优方案\02templates-项目级可复制文件目录\.mcp.json" "$proj\.mcp.json"
+Copy-Item "1-claudeCode\02-claude-optimize-调优方案\02templates-项目级可复制文件目录\.claude" "$proj\.claude" -Recurse
 
 # 3. 根据技术栈按需添加专用规则
-Copy-Item "03-claude-optimize\templates\.claude\rules\vue3.md" "$proj\.claude\rules\"
-Copy-Item "03-claude-optimize\templates\.claude\rules\typescript.md" "$proj\.claude\rules\"
+Copy-Item "1-claudeCode\02-claude-optimize-调优方案\02templates-项目级可复制文件目录\.claude\rules\vue3.md" "$proj\.claude\rules\"
+Copy-Item "1-claudeCode\02-claude-optimize-调优方案\02templates-项目级可复制文件目录\.claude\rules\typescript.md" "$proj\.claude\rules\"
 ```
 
 ### 方式三：分阶段部署
 
 ```powershell
 # 阶段一：核心配置（CLAUDE.md + Rules + Hooks + Commands）
-.\03-claude-optimize\scripts\setup-claude.ps1 -Phase 1
+.\1-claudeCode\02-claude-optimize-调优方案\scripts\setup-claude.ps1 -Phase 1
 
 # 阶段二：提效增强（工具 + 监控，需先完成阶段一）
-.\03-claude-optimize\scripts\setup-claude.ps1 -Phase 2 -ProjectDir "D:\your-project"
+.\1-claudeCode\02-claude-optimize-调优方案\scripts\setup-claude.ps1 -Phase 2 -ProjectDir "D:\your-project"
 
 # 阶段三：高级扩展（Skills + Agents，需先完成阶段二）
-.\03-claude-optimize\scripts\setup-claude.ps1 -Phase 3 -ProjectDir "D:\your-project"
+.\1-claudeCode\02-claude-optimize-调优方案\scripts\setup-claude.ps1 -Phase 3 -ProjectDir "D:\your-project"
 ```
 
 ---
@@ -123,41 +120,48 @@ Copy-Item "03-claude-optimize\templates\.claude\rules\typescript.md" "$proj\.cla
 ## 目录结构
 
 ```
-ClaudeCode/
-├── 01-claude-vscode-plugin/           # Claude VSCode 插件安装指南
-├── 02-claude-ccswitch/                # Claude + CC-Switch 安装指南
-├── 03-claude-optimize/                # 调优方案（核心）
-│   ├── CLAUDE.md                      #   项目行为准则（Karpathy 四原则）
-│   ├── claude调优方案.md              #   主文档：9 章完整方案
+claudecode-toolkit/
+├── 1-claudeCode/
+│   ├── 01-claude-ccswitch-安装配置/           # Claude + CC-Switch 安装指南
+│   ├── 02-claude-optimize-调优方案/           # 调优方案（核心）
+│   │   ├── CLAUDE.md                          #   项目行为准则（Karpathy 四原则）
+│   │   ├── claude调优方案.md                  #   主文档：9 章完整方案
+│   │   │
+│   │   ├── 01global-全局级可复制配置/         #   全局配置模板 → ~/.claude/
+│   │   │   ├── CLAUDE.md                      #     全局行为准则
+│   │   │   ├── commands/                      #     全局命令（/review, /fix-issue）
+│   │   │   └── tools/                         #     工具安装脚本
+│   │   │
+│   │   ├── 02templates-项目级可复制文件目录/  #   项目模板（完整可拷贝）
+│   │   │   ├── CLAUDE.md                      #     项目上下文模板
+│   │   │   ├── .mcp.json                      #     MCP 服务器配置
+│   │   │   └── .claude/                       #     完整 .claude 结构
+│   │   │       ├── settings.json
+│   │   │       ├── rules/                     #       9 个规则（通用 + 技术栈）
+│   │   │       ├── commands/                  #       2 个命令
+│   │   │       ├── agents/                    #       7 个智能体
+│   │   │       └── skills/                    #       13 个技能
+│   │   │
+│   │   ├── .claude/                           #   当前项目的工作配置
+│   │   └── scripts/                           #   部署脚本
 │   │
-│   ├── .claude_global/                #   全局配置模板 → ~/.claude/
-│   │   ├── CLAUDE.md                  #     全局行为准则
-│   │   ├── commands/                  #     全局命令（/review, /fix-issue）
-│   │   └── tools/                     #     工具安装脚本
-│   │
-│   ├── templates/                     #   项目模板（完整可拷贝）
-│   │   ├── CLAUDE.md                  #     项目上下文模板
-│   │   ├── .mcp.json                  #     MCP 服务器配置
-│   │   └── .claude/                   #     完整 .claude 结构
-│   │       ├── settings.json
-│   │       ├── rules/                 #       9 个规则（通用 + 技术栈）
-│   │       ├── commands/              #       2 个命令
-│   │       ├── agents/                #       7 个智能体
-│   │       └── skills/                #       13 个技能
-│   │
-│   ├── .claude/                       #   当前项目的工作配置
-│   └── scripts/                       #   部署脚本
+│   └── 03-claude-vscode-plugin-百炼Trae接入/  # VSCode/Trae 插件接入指南
 │
-├── 04-codex-codex++/                  # Codex + Codex++ 国产大模型落地指南（NEW）
-│   ├── CLAUDE.md                      #   项目行为准则
-│   ├── codex-codex++-domestic-model-setup-guide.md  #   主文档：7章完整指南
-│   ├── 常用命令.md                    #   Codex CLI 命令速查表
-│   ├── 分析-可行性评估.md             #   方案评估分析
-│   ├── config-templates/              #   配置模板（5套 + AGENTS.md）
-│   └── scripts/                       #   一键配置脚本
+├── 2-codex/
+│   └── 01-codex-codex++/                      # Codex + Codex++ 国产大模型落地指南
+│       ├── CLAUDE.md                          #   项目行为准则
+│       ├── Codex++桌面版-国产大模型落地指南.md  #   主文档：完整落地指南
+│       ├── 常用命令.md                        #   Codex CLI 命令速查表
+│       ├── 分析-可行性评估.md                 #   方案评估分析
+│       └── 01templates-模板文件目录/          #   模板文件
+│
+├── 3-demo-pages/                              # 交互式演示页面
+│   ├── demo.html                              #   统一入口：两大产品线概览
+│   ├── claude-code.html                       #   Claude Code 调优方案综合页
+│   └── codex-codexpp.html                     #   Codex++ 国产大模型方案综合页
 │
 ├── 任务提示词.txt
-└── 目录说明.md                        #   本文档
+└── 目录说明.md                                #   详细目录说明
 ```
 
 ---
@@ -202,7 +206,7 @@ ClaudeCode/
 
 ```powershell
 # 一键安装全部工具
-.\03-claude-optimize\.claude_global\tools\install-tools.ps1 -Tool all -AddToPath
+.\1-claudeCode\02-claude-optimize-调优方案\01global-全局级可复制配置\tools\install-tools.ps1 -Tool all -AddToPath
 
 # 单独安装
 .\install-tools.ps1 -Tool rtk       # CLI 输出过滤（减少 50-90% Token）
@@ -218,7 +222,7 @@ ClaudeCode/
 
 ```powershell
 # 复制 templates 到新项目
-Copy-Item "03-claude-optimize\templates\*" "D:\new-project\" -Recurse
+Copy-Item "1-claudeCode\02-claude-optimize-调优方案\02templates-项目级可复制文件目录\*" "D:\new-project\" -Recurse
 # 修改 CLAUDE.md 中的项目信息
 # 按需删除不需要的 rules/agents/skills
 ```
@@ -227,18 +231,18 @@ Copy-Item "03-claude-optimize\templates\*" "D:\new-project\" -Recurse
 
 ```powershell
 # 只添加 .claude 配置
-Copy-Item "03-claude-optimize\templates\.claude" "D:\existing-project\.claude" -Recurse
+Copy-Item "1-claudeCode\02-claude-optimize-调优方案\02templates-项目级可复制文件目录\.claude" "D:\existing-project\.claude" -Recurse
 # 添加项目级 CLAUDE.md
-Copy-Item "03-claude-optimize\templates\CLAUDE.md" "D:\existing-project\CLAUDE.md"
+Copy-Item "1-claudeCode\02-claude-optimize-调优方案\02templates-项目级可复制文件目录\CLAUDE.md" "D:\existing-project\CLAUDE.md"
 ```
 
 ### 场景三：全局配置更新
 
 ```powershell
 # 更新全局行为准则
-Copy-Item "03-claude-optimize\.claude_global\CLAUDE.md" "$env:USERPROFILE\.claude\CLAUDE.md"
+Copy-Item "1-claudeCode\02-claude-optimize-调优方案\01global-全局级可复制配置\CLAUDE.md" "$env:USERPROFILE\.claude\CLAUDE.md"
 # 更新全局命令
-Copy-Item "03-claude-optimize\.claude_global\commands\*.md" "$env:USERPROFILE\.claude\commands\"
+Copy-Item "1-claudeCode\02-claude-optimize-调优方案\01global-全局级可复制配置\commands\*.md" "$env:USERPROFILE\.claude\commands\"
 ```
 
 ---
