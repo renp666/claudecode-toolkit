@@ -26,4 +26,4 @@ __pycache__/
 
 # Claude Code local state (don't track per-machine state)
 .claude/settings.local.json
-3-demo-pages/
+任务提示词.txt

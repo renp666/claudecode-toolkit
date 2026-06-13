@@ -220,30 +220,15 @@
   <h2>四层优化架构</h2>
   <p>架构逻辑：<strong style="color:var(--text)">能用 → 做对 → 高效 → 工程化</strong>，逐层递进，每层依赖下层。</p>
 
-  <div class="arch-layer l4">
-    <div class="arch-num">L4</div>
+  <div class="arch-layer l1">
+    <div class="arch-num">L1</div>
     <div class="arch-body">
-      <h4>工程化层 — "规模化协作" <span class="badge badge-orange" style="margin-left:8px;">L4</span></h4>
-      <p>自定义 Commands、角色型智能体、Skills 技能、MCP 服务器 — 让 Claude Code 成为团队的工程化平台。</p>
+      <h4>基础层 — "能跑起来" <span class="badge badge-green" style="margin-left:8px;">L1</span></h4>
+      <p>环境就绪是优化的前提，基础层确保 Claude Code 稳定运行。</p>
       <ul>
-        <li><strong>自定义 Commands</strong>：/review / /fix-issue / /deploy / /test-plan，复用高频操作</li>
-        <li><strong>7 个角色型智能体</strong>：UI 设计师 / 前端架构师 / 代码审查员 / 安全扫描器 / 性能分析器 / API 测试 / 文档生成，按需调用，上下文隔离</li>
-        <li><strong>13 个 Skills</strong>：mattpocock/skills + addyosmani/agent-skills，覆盖全生命周期 Define → Plan → Build → Verify → Review → Ship</li>
-        <li><strong>MCP 服务器</strong>：Filesystem / GitHub，扩展外部能力</li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="arch-layer l3">
-    <div class="arch-num">L3</div>
-    <div class="arch-body">
-      <h4>效率层 — "用更少 Token 做更多事" <span class="badge badge-blue" style="margin-left:8px;">L3</span></h4>
-      <p>Token 是 Claude Code 最核心的成本和性能瓶颈，效率层聚焦 Token 优化。</p>
-      <ul>
-        <li><strong>rtk</strong>：CLI 输出过滤，减少 50-90% Token</li>
-        <li><strong>caveman</strong>：响应风格压缩（Lite/Full/Ultra 三档），减少 65-87% Token</li>
-        <li><strong>ccusage</strong>：用量基线分析（daily/monthly/breakdown）</li>
-        <li><strong>Claude Monitor</strong>：实时限额预警，避免意外超额</li>
+        <li>Claude Code CLI + CC-Switch（多账号模型切换）</li>
+        <li>Node.js + Git + PowerShell 7</li>
+        <li>网络 / 代理 / 密钥配置</li>
       </ul>
     </div>
   </div>
@@ -262,15 +247,30 @@
     </div>
   </div>
 
-  <div class="arch-layer l1">
-    <div class="arch-num">L1</div>
+  <div class="arch-layer l3">
+    <div class="arch-num">L3</div>
     <div class="arch-body">
-      <h4>基础层 — "能跑起来" <span class="badge badge-green" style="margin-left:8px;">L1</span></h4>
-      <p>环境就绪是优化的前提，基础层确保 Claude Code 稳定运行。</p>
+      <h4>效率层 — "用更少 Token 做更多事" <span class="badge badge-blue" style="margin-left:8px;">L3</span></h4>
+      <p>Token 是 Claude Code 最核心的成本和性能瓶颈，效率层聚焦 Token 优化。</p>
       <ul>
-        <li>Claude Code CLI + CC-Switch（多账号模型切换）</li>
-        <li>Node.js + Git + PowerShell 7</li>
-        <li>网络 / 代理 / 密钥配置</li>
+        <li><strong>rtk</strong>：CLI 输出过滤，减少 50-90% Token</li>
+        <li><strong>caveman</strong>：响应风格压缩（Lite/Full/Ultra 三档），减少 65-87% Token</li>
+        <li><strong>ccusage</strong>：用量基线分析（daily/monthly/breakdown）</li>
+        <li><strong>Claude Monitor</strong>：实时限额预警，避免意外超额</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="arch-layer l4">
+    <div class="arch-num">L4</div>
+    <div class="arch-body">
+      <h4>工程化层 — "规模化协作" <span class="badge badge-orange" style="margin-left:8px;">L4</span></h4>
+      <p>自定义 Commands、角色型智能体、Skills 技能、MCP 服务器 — 让 Claude Code 成为团队的工程化平台。</p>
+      <ul>
+        <li><strong>自定义 Commands</strong>：/review / /fix-issue / /deploy / /test-plan，复用高频操作</li>
+        <li><strong>7 个角色型智能体</strong>：UI 设计师 / 前端架构师 / 代码审查员 / 安全扫描器 / 性能分析器 / API 测试 / 文档生成，按需调用，上下文隔离</li>
+        <li><strong>13 个 Skills</strong>：mattpocock/skills + addyosmani/agent-skills，覆盖全生命周期 Define → Plan → Build → Verify → Review → Ship</li>
+        <li><strong>MCP 服务器</strong>：Filesystem / GitHub，扩展外部能力</li>
       </ul>
     </div>
   </div>
