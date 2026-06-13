@@ -148,6 +148,14 @@ ClaudeCode/
 │   ├── .claude/                       #   当前项目的工作配置
 │   └── scripts/                       #   部署脚本
 │
+├── 04-codex-codex++/                  # Codex + Codex++ 国产大模型落地指南（NEW）
+│   ├── CLAUDE.md                      #   项目行为准则
+│   ├── codex-codex++-domestic-model-setup-guide.md  #   主文档：7章完整指南
+│   ├── 常用命令.md                    #   Codex CLI 命令速查表
+│   ├── 分析-可行性评估.md             #   方案评估分析
+│   ├── config-templates/              #   配置模板（5套 + AGENTS.md）
+│   └── scripts/                       #   一键配置脚本
+│
 ├── 任务提示词.txt
 └── 目录说明.md                        #   本文档
 ```

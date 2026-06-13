@@ -1,0 +1,54 @@
+# ============================================================
+# Codex CLI 配置模板 — 通义千问 (Qwen-Coder)
+# 适用：Codex CLI v0.130+
+# 说明：直接复制到 ~/.codex/config.toml 或合并到现有配置
+# 前提：已设置 DASHSCOPE_API_KEY 环境变量
+# ============================================================
+
+# --- 默认模型 ---
+model = "qwen-coder-plus"
+model_provider = "qwen"
+
+# --- 模型供应商定义 ---
+[model_providers.qwen]
+name = "Aliyun Qwen"
+base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+wire_api = "responses"
+env_key = "DASHSCOPE_API_KEY"
+requires_openai_auth = false
+
+# --- 模型能力声明 ---
+[model_properties."qwen-coder-plus"]
+context_window = 131072
+max_context_window = 131072
+supports_parallel_tool_calls = true
+supports_reasoning_summaries = false
+input_modalities = ["text"]
+
+[model_properties."qwen-max"]
+context_window = 32768
+max_context_window = 32768
+supports_parallel_tool_calls = true
+supports_reasoning_summaries = false
+input_modalities = ["text"]
+
+[model_properties."qwen-turbo"]
+context_window = 1000000
+max_context_window = 1000000
+supports_parallel_tool_calls = false
+supports_reasoning_summaries = false
+input_modalities = ["text"]
+
+# --- 多场景 Profiles ---
+[profiles.qwen-coder]
+model = "qwen-coder-plus"
+model_provider = "qwen"
+model_reasoning_effort = "high"
+
+[profiles.qwen-fast]
+model = "qwen-turbo"
+model_provider = "qwen"
+
+# --- 安全设置 ---
+approval_mode = "default"
+sandbox_mode = "workspace_write"

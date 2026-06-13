@@ -1,0 +1,122 @@
+# ============================================================
+# Codex CLI 配置模板 — 多供应商 Profiles（一文件通吃）
+# 适用：Codex CLI v0.130+
+# 说明：合并所有国产模型供应商到一份配置文件，通过 -p 参数切换
+# 使用：codex -p ds-pro / codex -p qw-coder / codex -p gl-free / codex -p km-long
+# ============================================================
+
+# --- 默认供应商与模型 ---
+model = "deepseek-v4-pro"
+model_provider = "deepseek"
+
+# ======== DeepSeek ========
+[model_providers.deepseek]
+name = "DeepSeek"
+base_url = "https://api.deepseek.com/v1"
+wire_api = "responses"
+env_key = "DEEPSEEK_API_KEY"
+
+[model_properties."deepseek-v4-pro"]
+context_window = 262144
+max_context_window = 262144
+supports_parallel_tool_calls = true
+supports_reasoning_summaries = false
+input_modalities = ["text"]
+
+[model_properties."deepseek-v4-flash"]
+context_window = 262144
+max_context_window = 262144
+supports_parallel_tool_calls = true
+supports_reasoning_summaries = false
+input_modalities = ["text"]
+
+# ======== 通义千问 ========
+[model_providers.qwen]
+name = "Aliyun Qwen"
+base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+wire_api = "responses"
+env_key = "DASHSCOPE_API_KEY"
+
+[model_properties."qwen-coder-plus"]
+context_window = 131072
+max_context_window = 131072
+supports_parallel_tool_calls = true
+supports_reasoning_summaries = false
+input_modalities = ["text"]
+
+[model_properties."qwen-turbo"]
+context_window = 1000000
+max_context_window = 1000000
+supports_parallel_tool_calls = false
+supports_reasoning_summaries = false
+input_modalities = ["text"]
+
+# ======== 智谱 GLM ========
+[model_providers.glm]
+name = "Zhipu GLM"
+base_url = "https://open.bigmodel.cn/api/paas/v4"
+wire_api = "responses"
+env_key = "ZHIPU_API_KEY"
+
+[model_properties."glm-4-plus"]
+context_window = 131072
+max_context_window = 131072
+supports_parallel_tool_calls = true
+supports_reasoning_summaries = false
+input_modalities = ["text"]
+
+[model_properties."glm-4-flash"]
+context_window = 131072
+max_context_window = 131072
+supports_parallel_tool_calls = true
+supports_reasoning_summaries = false
+input_modalities = ["text"]
+
+# ======== Kimi ========
+[model_providers.moonshot]
+name = "Moonshot Kimi"
+base_url = "https://api.moonshot.cn/v1"
+wire_api = "responses"
+env_key = "MOONSHOT_API_KEY"
+
+[model_properties."moonshot-v1-128k"]
+context_window = 131072
+max_context_window = 131072
+supports_parallel_tool_calls = true
+supports_reasoning_summaries = false
+input_modalities = ["text"]
+
+# ======== Profiles — 一键切换 ========
+[profiles.ds-pro]
+model = "deepseek-v4-pro"
+model_provider = "deepseek"
+model_reasoning_effort = "xhigh"
+
+[profiles.ds-flash]
+model = "deepseek-v4-flash"
+model_provider = "deepseek"
+
+[profiles.qw-coder]
+model = "qwen-coder-plus"
+model_provider = "qwen"
+model_reasoning_effort = "high"
+
+[profiles.qw-fast]
+model = "qwen-turbo"
+model_provider = "qwen"
+
+[profiles.gl-free]
+model = "glm-4-flash"
+model_provider = "glm"
+
+[profiles.gl-pro]
+model = "glm-4-plus"
+model_provider = "glm"
+
+[profiles.km-long]
+model = "moonshot-v1-128k"
+model_provider = "moonshot"
+
+# --- 安全设置 ---
+approval_mode = "default"
+sandbox_mode = "workspace_write"

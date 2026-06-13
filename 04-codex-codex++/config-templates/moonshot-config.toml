@@ -1,0 +1,53 @@
+# ============================================================
+# Codex CLI 配置模板 — Moonshot Kimi
+# 适用：Codex CLI v0.130+
+# 说明：Kimi 以超长上下文（128K）著称，适合大型项目分析
+# 前提：已设置 MOONSHOT_API_KEY 环境变量
+# ============================================================
+
+# --- 默认模型 ---
+model = "moonshot-v1-128k"
+model_provider = "moonshot"
+
+# --- 模型供应商定义 ---
+[model_providers.moonshot]
+name = "Moonshot Kimi"
+base_url = "https://api.moonshot.cn/v1"
+wire_api = "responses"
+env_key = "MOONSHOT_API_KEY"
+requires_openai_auth = false
+
+# --- 模型能力声明 ---
+[model_properties."moonshot-v1-8k"]
+context_window = 8192
+max_context_window = 8192
+supports_parallel_tool_calls = false
+supports_reasoning_summaries = false
+input_modalities = ["text"]
+
+[model_properties."moonshot-v1-32k"]
+context_window = 32768
+max_context_window = 32768
+supports_parallel_tool_calls = true
+supports_reasoning_summaries = false
+input_modalities = ["text"]
+
+[model_properties."moonshot-v1-128k"]
+context_window = 131072
+max_context_window = 131072
+supports_parallel_tool_calls = true
+supports_reasoning_summaries = false
+input_modalities = ["text"]
+
+# --- 多场景 Profiles ---
+[profiles.kimi-long]
+model = "moonshot-v1-128k"
+model_provider = "moonshot"
+
+[profiles.kimi-fast]
+model = "moonshot-v1-32k"
+model_provider = "moonshot"
+
+# --- 安全设置 ---
+approval_mode = "default"
+sandbox_mode = "workspace_write"
